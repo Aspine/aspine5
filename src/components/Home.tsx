@@ -1,9 +1,9 @@
 import {
-	CalendarDays,
 	CalendarClock,
+	CalendarDays,
 	FileText,
 	GraduationCap,
-	History,
+	Info,
 	LogOut,
 	Moon,
 	Sun,
@@ -11,6 +11,7 @@ import {
 } from "lucide-preact";
 import type { ComponentChildren } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
+import { DEMO_FILE } from "@/lib/demo";
 import {
 	GPA_KEYS,
 	averageGpa,
@@ -28,20 +29,32 @@ import type {
 	ScheduleRow,
 	StudentData
 } from "@/lib/types";
-import { useApi, type ApiState } from "@/lib/useApi";
-import { Grades } from "./Grades";
+import { gradesPath, useApi, type ApiState } from "@/lib/useApi";
+import { Grades, type DeleteAssignment, type EditClass } from "./Grades";
 import { Recent } from "./Recent";
 import { Reports } from "./Reports";
 import { Schedule } from "./Schedule";
-import { Loaded, Menu, Toggle } from "./Templates";
+import {
+	Footer,
+	Loaded,
+	Menu,
+	Snackbar,
+	Toggle,
+	type Snack
+} from "./Templates";
+import { ExportDialog, parseExport } from "./Transfer";
 
-const TABS = ["Grades", "Schedule", "Attendance & Recent", "Reports"] as const;
+export const MODES = ["home", "demo", "import"] as const;
 
-const TAB_DETAILS: Record<Tab, [LucideIcon, string]> = {
-	Grades: [GraduationCap, "Grades"],
-	Schedule: [CalendarClock, "Schedule"],
-	"Attendance & Recent": [History, "Recent"],
-	Reports: [FileText, "Reports"]
+export type Mode = (typeof MODES)[number];
+
+const TABS = ["Grades", "Schedule", "Info", "Reports"] as const;
+
+const TAB_ICONS: Record<Tab, LucideIcon> = {
+	Grades: GraduationCap,
+	Schedule: CalendarClock,
+	Info,
+	Reports: FileText
 };
 
 const GPA_LABELS: Record<GpaKey, string> = {
@@ -55,6 +68,12 @@ const THEME_KEY = "aspineTheme";
 type Tab = (typeof TABS)[number];
 
 type Theme = "light" | "dark";
+
+type Year = StudentData["year"];
+
+type Imported = { label: string; file: ExportFile };
+
+const DEMO: Imported = { label: "Demo", file: DEMO_FILE };
 
 const Curve = () => (
 	<svg
@@ -113,37 +132,88 @@ const fromFile = <T,>(data: T | null): ApiState<T> => ({
 	error: data ? null : "Not in file"
 });
 
-const downloadJson = (name: string, value: unknown) => {
-	const link = document.createElement("a");
-	link.href = URL.createObjectURL(
-		new Blob([JSON.stringify(value, null, 2)], { type: "application/json" })
+const tabLabel = (option: Tab) => {
+	const Icon = TAB_ICONS[option];
+	return (
+		<>
+			<Icon size={18} class="tabIcon" aria-hidden="true" />
+			<span>{option}</span>
+		</>
 	);
-	link.download = name;
-	link.click();
-	setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 };
 
-export const Home = () => {
+export const Home = ({
+	mode,
+	commit
+}: {
+	mode: Mode;
+	commit: string | null;
+}) => {
+	const offline = mode !== "home";
 	const [tab, setTab] = useState<Tab>("Grades");
-	const [year, setYear] = useState<"current" | "previous">("current");
+	const [year, setYear] = useState<Year>("current");
 	const [quarter, setQuarter] = useState("");
 	const [gpaKey, setGpaKey] = useState<GpaKey>("percent");
 	const [edits, setEdits] = useState<Record<string, Assignment[]>>({});
-	const [imported, setImported] = useState<ExportFile | null>(null);
-	const [importError, setImportError] = useState<string | null>(null);
+	const [imported, setImported] = useState<Imported | null>(
+		mode === "demo" ? DEMO : null
+	);
+	const [exporting, setExporting] = useState(false);
+	const [snack, setSnack] = useState<Snack | null>(null);
+	const undos = useRef<(() => void)[]>([]);
 	const fileInput = useRef<HTMLInputElement>(null);
+	const fromAspen = !offline && !imported;
 	const live = {
 		grades: useApi<StudentData>(
-			`/api/grades?${new URLSearchParams({ year, quarter })}`
+			fromAspen ? gradesPath(year, quarter) : null
 		),
-		recent: useApi<RecentData>("/api/recent"),
-		schedule: useApi<ScheduleRow[]>("/api/schedule"),
-		reports: useApi<Report[]>("/api/reports")
+		recent: useApi<RecentData>(fromAspen ? "/api/recent" : null),
+		schedule: useApi<ScheduleRow[]>(fromAspen ? "/api/schedule" : null),
+		reports: useApi<Report[]>(offline ? null : "/api/reports")
 	};
-	const grades = imported ? fromFile(imported.grades) : live.grades;
-	const recent = imported ? fromFile(imported.recent) : live.recent;
-	const schedule = imported ? fromFile(imported.schedule) : live.schedule;
+	const file = imported?.file;
+	const grades = file
+		? fromFile(
+				file.terms.find(term => term.quarter === quarter) ??
+					file.terms.find(
+						term => term.quarter === term.currentQuarter
+					) ??
+					file.terms[0] ??
+					null
+			)
+		: live.grades;
+	const recent = file ? fromFile(file.recent) : live.recent;
+	const schedule = file ? fromFile(file.schedule) : live.schedule;
+	const reports = offline ? fromFile<Report[]>(null) : live.reports;
 	const data = grades.data;
+
+	const notify = (text: string, action?: Snack["action"]) =>
+		setSnack({ id: Date.now(), text, ...(action && { action }) });
+
+	const undo = () => {
+		undos.current.pop()?.();
+		setSnack(null);
+	};
+
+	useEffect(() => {
+		const undoKey = (event: KeyboardEvent) => {
+			const typing =
+				event.target instanceof HTMLInputElement ||
+				event.target instanceof HTMLSelectElement;
+			if (
+				(event.ctrlKey || event.metaKey) &&
+				!event.shiftKey &&
+				event.key.toLowerCase() === "z" &&
+				!typing &&
+				undos.current.length > 0
+			) {
+				event.preventDefault();
+				undo();
+			}
+		};
+		addEventListener("keydown", undoKey);
+		return () => removeEventListener("keydown", undoKey);
+	}, []);
 
 	const gpaFor = (key: string) =>
 		data &&
@@ -162,47 +232,73 @@ export const Home = () => {
 	const formatGpa = (gpa: Gpa | null) =>
 		gpa === null ? "–" : gpa[gpaKey].toFixed(2);
 
-	const editClass = (classOid: string, assignments: Assignment[]) =>
-		setEdits(previous => ({ ...previous, [classOid]: assignments }));
+	const editClass: EditClass = (classOid, change) =>
+		setEdits(previous => ({
+			...previous,
+			[classOid]: change(
+				previous[classOid] ??
+					data?.classes.find(item => item.oid === classOid)
+						?.assignments ??
+					[]
+			)
+		}));
 
-	const load = (nextYear: typeof year, nextQuarter: string) => {
-		setImported(null);
-		setImportError(null);
-		setYear(nextYear);
-		setQuarter(nextQuarter);
+	const deleteAssignment: DeleteAssignment = (
+		classOid,
+		assignment,
+		index
+	) => {
+		editClass(classOid, list =>
+			list.filter(item => item.oid !== assignment.oid)
+		);
+		undos.current.push(() =>
+			editClass(classOid, list =>
+				list.some(item => item.oid === assignment.oid)
+					? list
+					: [
+							...list.slice(0, index),
+							assignment,
+							...list.slice(index)
+						]
+			)
+		);
+		notify(`Deleted ${assignment.name}`, ["Undo", undo]);
+	};
+
+	const clearEdits = () => {
 		setEdits({});
+		undos.current = [];
+		setSnack(null);
 	};
 
-	const exportData = () =>
-		data &&
-		downloadJson(`aspine-${data.year}-${data.quarter}.json`, {
-			exportedAt: new Date().toISOString(),
-			grades: {
-				...data,
-				classes: data.classes.map(item => ({
-					...item,
-					assignments: edits[item.oid] ?? item.assignments
-				}))
-			},
-			recent: recent.data,
-			schedule: schedule.data
-		} satisfies ExportFile);
-
-	const importData = async (file: File) => {
-		try {
-			const parsed = JSON.parse(await file.text()) as ExportFile;
-			if (!Array.isArray(parsed.grades?.classes))
-				throw new Error("invalid");
-			setImported(parsed);
-			setImportError(null);
-			setEdits({});
-		} catch {
-			setImportError("Invalid file");
-		}
+	const selectQuarter = (key: string) => {
+		setQuarter(key);
+		clearEdits();
 	};
 
-	const logout = async () => {
-		await fetch("/api/logout").catch(() => null);
+	const selectYear = (nextYear: Year) => {
+		setImported(null);
+		setYear(nextYear);
+		selectQuarter("");
+	};
+
+	const selectFile = (next: Imported) => {
+		setImported(next);
+		selectQuarter("");
+	};
+
+	const importData = async (picked: File) => {
+		const parsed = parseExport(await picked.text());
+		if (!parsed) return notify("Invalid file");
+		selectFile({ label: "Imported", file: parsed });
+	};
+
+	const openImport = () => fileInput.current?.click();
+
+	const openExport = () => setExporting(true);
+
+	const leave = async () => {
+		if (!offline) await fetch("/api/logout").catch(() => null);
 		location.assign("/");
 	};
 
@@ -214,9 +310,10 @@ export const Home = () => {
 					<Grades
 						data={loaded}
 						edits={edits}
+						stats={fromAspen}
 						onEdit={editClass}
-						onReset={() => setEdits({})}
-						onExport={exportData}
+						onDelete={deleteAssignment}
+						onReset={clearEdits}
 					/>
 				)}
 			</Loaded>
@@ -228,7 +325,7 @@ export const Home = () => {
 			</Loaded>
 		],
 		[
-			"Attendance & Recent",
+			"Info",
 			<Loaded state={recent}>
 				{loaded => (
 					<Recent recent={loaded} classes={data?.classes ?? []} />
@@ -237,7 +334,7 @@ export const Home = () => {
 		],
 		[
 			"Reports",
-			<Loaded state={live.reports}>
+			<Loaded state={reports}>
 				{loaded => <Reports reports={loaded} />}
 			</Loaded>
 		]
@@ -260,44 +357,80 @@ export const Home = () => {
 									aria-hidden="true"
 								/>
 								<span class="menuText">
-									{imported
-										? "Imported"
-										: year === "current"
-											? "Current Year"
-											: "Previous Year"}
+									{imported?.label ??
+										(offline
+											? "Import"
+											: year === "current"
+												? "Current Year"
+												: "Previous Year")}
 								</span>
 							</>
 						}
 						groups={[
+							...(offline
+								? []
+								: [
+										[
+											{
+												label: "Current Year",
+												detail: "",
+												checked:
+													!imported &&
+													year === "current",
+												onSelect: () =>
+													selectYear("current")
+											},
+											{
+												label: "Previous Year",
+												detail: "",
+												checked:
+													!imported &&
+													year === "previous",
+												onSelect: () =>
+													selectYear("previous")
+											}
+										]
+									]),
 							[
-								{
-									label: "Current Year",
-									detail: "",
-									checked: !imported && year === "current",
-									onSelect: () => load("current", "")
-								},
-								{
-									label: "Previous Year",
-									detail: "",
-									checked: !imported && year === "previous",
-									onSelect: () => load("previous", "")
-								}
-							],
-							[
+								...(mode === "demo"
+									? [
+											{
+												label: "Demo",
+												detail: "",
+												checked: imported === DEMO,
+												onSelect: () => selectFile(DEMO)
+											}
+										]
+									: []),
 								{
 									label: "Import Data",
 									detail: "",
-									checked: imported !== null,
-									onSelect: () => fileInput.current?.click()
-								}
+									checked: imported?.label === "Imported",
+									onSelect: openImport
+								},
+								...(data
+									? [
+											{
+												label: "Export Data",
+												detail: "",
+												checked: false,
+												onSelect: openExport
+											}
+										]
+									: [])
 							]
 						]}
 					/>
 					<Menu
 						label={
-							data
-								? `${data.quarter} · ${formatGpa(gpaFor(data.quarter))}`
-								: "GPA"
+							data ? (
+								<span>
+									<span class="menuQuarter">{`${data.quarter} · `}</span>
+									{formatGpa(gpaFor(data.quarter))}
+								</span>
+							) : (
+								"GPA"
+							)
 						}
 						groups={
 							data
@@ -309,11 +442,14 @@ export const Home = () => {
 													: key,
 											detail: formatGpa(gpaFor(key)),
 											checked: key === data.quarter,
-											...(imported
+											...(file &&
+											!file.terms.some(
+												term => term.quarter === key
+											)
 												? {}
 												: {
 														onSelect: () =>
-															load(year, key)
+															selectQuarter(key)
 													})
 										})),
 										[
@@ -347,8 +483,8 @@ export const Home = () => {
 						accept="application/json,.json"
 						hidden
 						onChange={event => {
-							const file = event.currentTarget.files?.[0];
-							if (file) void importData(file);
+							const picked = event.currentTarget.files?.[0];
+							if (picked) void importData(picked);
 							event.currentTarget.value = "";
 						}}
 					/>
@@ -359,20 +495,7 @@ export const Home = () => {
 						options={TABS}
 						value={tab}
 						variant="tab"
-						label={option => {
-							const [Icon, short] = TAB_DETAILS[option];
-							return (
-								<>
-									<Icon
-										size={18}
-										class="tabIcon"
-										aria-hidden="true"
-									/>
-									<span class="tabFull">{option}</span>
-									<span class="tabShort">{short}</span>
-								</>
-							);
-						}}
+						label={tabLabel}
 						onChange={setTab}
 					/>
 					<Curve />
@@ -382,22 +505,55 @@ export const Home = () => {
 					<button
 						type="button"
 						class="chromeIcon"
-						aria-label="Logout"
-						title="Logout"
-						onClick={logout}
+						aria-label={offline ? "Exit" : "Logout"}
+						title={offline ? "Exit" : "Logout"}
+						onClick={leave}
 					>
 						<LogOut size={19} aria-hidden="true" />
 					</button>
 				</div>
 			</header>
 			<main class="viewport">
-				{importError && <p class="status error">{importError}</p>}
-				{panels.map(([name, content]) => (
-					<section key={name} hidden={tab !== name}>
-						{content}
-					</section>
-				))}
+				{mode === "import" && !imported ? (
+					<button
+						type="button"
+						class="button primary"
+						onClick={openImport}
+					>
+						Import Data
+					</button>
+				) : (
+					panels.map(([name, content]) => (
+						<section key={name} hidden={tab !== name}>
+							{content}
+						</section>
+					))
+				)}
 			</main>
+			{exporting && data && (
+				<ExportDialog
+					current={{
+						...data,
+						classes: data.classes.map(item => ({
+							...item,
+							assignments: edits[item.oid] ?? item.assignments
+						}))
+					}}
+					recent={recent.data}
+					schedule={schedule.data}
+					terms={file?.terms ?? null}
+					onClose={() => setExporting(false)}
+					onError={notify}
+				/>
+			)}
+			<Footer commit={commit} stage>
+				{data && (
+					<button type="button" onClick={openExport}>
+						Export
+					</button>
+				)}
+			</Footer>
+			<Snackbar snack={snack} onClose={() => setSnack(null)} />
 		</div>
 	);
 };

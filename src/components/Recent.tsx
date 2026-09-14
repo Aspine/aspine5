@@ -74,8 +74,8 @@ export const Recent = ({
 	};
 
 	return (
-		<>
-			<div class="toolbar">
+		<div class="panel">
+			<div class="panelBar">
 				<Toggle
 					options={VIEWS}
 					value={view}
@@ -84,6 +84,6 @@ export const Recent = ({
 				/>
 			</div>
 			{tables[view]}
-		</>
+		</div>
 	);
 };

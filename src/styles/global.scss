@@ -243,12 +243,30 @@ svg {
 	font-family: var(--fontMono);
 	font-size: 0.8rem;
 
-	a {
+	a,
+	button {
+		padding: 0;
+		border: 0;
+		background: none;
 		color: inherit;
+		font: inherit;
 		text-decoration: none;
+		cursor: pointer;
 
 		&:hover {
 			color: var(--text);
+		}
+	}
+}
+
+.footerLinks {
+	display: flex;
+	align-items: center;
+	gap: 1.25rem;
+
+	@media (max-width: 479px) {
+		> :last-child {
+			display: none;
 		}
 	}
 }

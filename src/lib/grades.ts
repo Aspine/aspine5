@@ -77,8 +77,8 @@ const pointsPercent = (assignments: Assignment[]) => {
 	const maxScore = sum(graded.map(assignment => assignment.maxScore));
 	const score = sum(graded.map(assignment => assignment.score));
 	return {
-		score,
-		maxScore,
+		score: Math.round(score * 100) / 100,
+		maxScore: Math.round(maxScore * 100) / 100,
 		percent: maxScore > 0 ? (score / maxScore) * 100 : null
 	};
 };

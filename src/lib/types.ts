@@ -73,7 +73,7 @@ export type AssignmentStats = {
 
 export type ExportFile = {
 	exportedAt: string;
-	grades: StudentData;
+	terms: StudentData[];
 	recent: RecentData | null;
 	schedule: ScheduleRow[] | null;
 };

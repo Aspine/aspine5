@@ -1,0 +1,14 @@
+---
+import { Home, MODES, type Mode } from "../components/Home";
+import Page from "../layouts/Page.astro";
+import { COMMIT } from "../server/commit";
+import "../styles/home.scss";
+
+export const getStaticPaths = () => MODES.map(mode => ({ params: { mode } }));
+
+const mode = Astro.params.mode as Mode;
+---
+
+<Page stage>
+	<Home client:load mode={mode} commit={COMMIT} />
+</Page>

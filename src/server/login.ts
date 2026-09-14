@@ -11,6 +11,8 @@ import {
 	BROWSER_ARGS,
 	CAPTCHA_TTL_MS,
 	HEADLESS,
+	LOGIN_LIMIT,
+	LOGIN_WINDOW_MS,
 	NAVIGATION_TIMEOUT_MS,
 	SELECTOR_TIMEOUT_MS,
 	VIEWPORT
@@ -28,6 +30,16 @@ export type LoginResult =
 
 let browser: Promise<Browser> | null = null;
 const pendingCaptchas = new Map<string, { page: Page; loginUrl: string }>();
+const loginAttempts = new Map<string, number[]>();
+
+export const loginAllowed = (key: string, now = Date.now()) => {
+	const recent = (loginAttempts.get(key) ?? []).filter(
+		time => now - time < LOGIN_WINDOW_MS
+	);
+	const allowed = recent.length < LOGIN_LIMIT;
+	loginAttempts.set(key, allowed ? [...recent, now] : recent);
+	return allowed;
+};
 
 const getBrowser = () =>
 	(browser ??= (

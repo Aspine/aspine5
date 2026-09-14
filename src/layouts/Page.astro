@@ -1,6 +1,6 @@
 ---
-import { execFileSync } from "node:child_process";
-import { REPO_URL } from "../config";
+import { Footer } from "../components/Templates";
+import { COMMIT } from "../server/commit";
 import "../styles/global.scss";
 
 interface Props {
@@ -8,20 +8,6 @@ interface Props {
 }
 
 const { stage = false } = Astro.props;
-
-const readCommit = () => {
-	try {
-		return execFileSync("git", ["rev-parse", "HEAD"], {
-			stdio: ["ignore", "pipe", "ignore"]
-		})
-			.toString()
-			.trim();
-	} catch {
-		return null;
-	}
-};
-
-const commit = readCommit();
 ---
 
 <!doctype html>
@@ -48,21 +34,6 @@ const commit = readCommit();
 	<body>
 		{!stage && <header class="pageTop">aspine v5</header>}
 		<slot />
-		<footer class:list={["pageBottom", { stageFooter: stage }]}>
-			{commit ? (
-				<a
-					href={`${REPO_URL}/commit/${commit}`}
-					target="_blank"
-					rel="noreferrer"
-				>
-					#{commit.slice(0, 7)}
-				</a>
-			) : (
-				<span />
-			)}
-			<a href={REPO_URL} target="_blank" rel="noreferrer">
-				{REPO_URL.replace("https://", "")}
-			</a>
-		</footer>
+		{!stage && <Footer commit={COMMIT} />}
 	</body>
 </html>

@@ -1,6 +1,7 @@
 import { Check, ChevronDown, X } from "lucide-preact";
 import type { ComponentChildren } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
+import { REPO_URL, SNACKBAR_MS } from "@/config";
 import type { ApiState } from "@/lib/useApi";
 
 export type Column = {
@@ -14,6 +15,12 @@ export type MenuItem = {
 	detail: string;
 	checked: boolean;
 	onSelect?: () => void;
+};
+
+export type Snack = {
+	id: number;
+	text: string;
+	action?: readonly [string, () => void];
 };
 
 const cellClass = (column: Column | undefined) =>
@@ -268,3 +275,76 @@ export const Modal = ({
 		</div>
 	);
 };
+
+export const Snackbar = ({
+	snack,
+	onClose
+}: {
+	snack: Snack | null;
+	onClose: () => void;
+}) => {
+	useEffect(() => {
+		if (!snack) return;
+		const timer = setTimeout(onClose, SNACKBAR_MS);
+		return () => clearTimeout(timer);
+	}, [snack]);
+
+	return snack ? (
+		<div key={snack.id} class="snackbar" role="status">
+			<span>{snack.text}</span>
+			{snack.action && (
+				<button
+					type="button"
+					class="snackAction"
+					onClick={() => {
+						snack.action?.[1]();
+						onClose();
+					}}
+				>
+					{snack.action[0]}
+				</button>
+			)}
+			<button
+				type="button"
+				class="iconButton"
+				aria-label="Close"
+				onClick={onClose}
+			>
+				<X size={16} aria-hidden="true" />
+			</button>
+		</div>
+	) : null;
+};
+
+export const Footer = ({
+	commit,
+	stage = false,
+	children
+}: {
+	commit: string | null;
+	stage?: boolean;
+	children?: ComponentChildren;
+}) => (
+	<footer class={stage ? "pageBottom stageFooter" : "pageBottom"}>
+		{commit ? (
+			<a
+				href={`${REPO_URL}/commit/${commit}`}
+				target="_blank"
+				rel="noreferrer"
+			>
+				#{commit.slice(0, 7)}
+			</a>
+		) : (
+			<span />
+		)}
+		<nav class="footerLinks" aria-label="Links">
+			{children}
+			<a href={`${REPO_URL}/issues/new`} target="_blank" rel="noreferrer">
+				Report issue
+			</a>
+			<a href={REPO_URL} target="_blank" rel="noreferrer">
+				{REPO_URL.replace("https://", "")}
+			</a>
+		</nav>
+	</footer>
+);

@@ -51,6 +51,22 @@
 	font-size: 0.9rem;
 }
 
+.loginLinks {
+	display: flex;
+	justify-content: center;
+	gap: 1.5rem;
+	font-size: 0.875rem;
+
+	a {
+		color: var(--textMuted);
+		text-decoration: none;
+
+		&:hover {
+			color: var(--text);
+		}
+	}
+}
+
 .spinner {
 	animation: spin 0.8s linear infinite;
 }

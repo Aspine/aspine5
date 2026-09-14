@@ -1,3 +1,4 @@
+import { Download } from "lucide-preact";
 import { useState } from "preact/hooks";
 import type { Report } from "@/lib/types";
 
@@ -11,27 +12,43 @@ export const Reports = ({ reports }: { reports: Report[] }) => {
 
 	return (
 		<div class="reports">
-			<ul class="reportList">
-				{pdfs.map(report => (
-					<li key={report.id}>
-						<button
-							type="button"
-							class="reportItem"
-							title={report.filename}
-							aria-pressed={report.id === id}
-							onClick={() => setId(report.id)}
+			<div class="panel reportPanel">
+				<div class="panelBar">
+					<h2 class="panelTitle">Reports</h2>
+					<span class="panelDetail">{pdfs.length}</span>
+				</div>
+				<ul class="reportList">
+					{pdfs.map(report => (
+						<li key={report.id}>
+							<button
+								type="button"
+								class="reportItem"
+								title={report.filename}
+								aria-pressed={report.id === id}
+								onClick={() => setId(report.id)}
+							>
+								{report.filename}
+							</button>
+						</li>
+					))}
+				</ul>
+			</div>
+			<div class="panel reportPanel reportView">
+				<div class="panelBar">
+					<h2 class="panelTitle" title={selected.filename}>
+						{selected.filename}
+					</h2>
+					<div class="panelActions">
+						<a
+							class="iconButton"
+							href={source}
+							download
+							aria-label="Download"
+							title="Download"
 						>
-							{report.filename}
-						</button>
-					</li>
-				))}
-			</ul>
-			<div>
-				<div class="toolbar reportBar">
-					<span class="muted">{selected.filename}</span>
-					<a class="button" href={source} download>
-						Download
-					</a>
+							<Download size={16} aria-hidden="true" />
+						</a>
+					</div>
 				</div>
 				<iframe class="reportFrame" title="Report" src={source} />
 			</div>
