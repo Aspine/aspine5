@@ -1,17 +1,60 @@
 ---
+import { execFileSync } from "node:child_process";
 import { LoginForm } from "../components/LoginForm";
+import { REPO_URL } from "../config";
+import "../styles/global.scss";
+import "../styles/login.scss";
+
+const readCommit = () => {
+	try {
+		return execFileSync("git", ["rev-parse", "HEAD"], {
+			stdio: ["ignore", "pipe", "ignore"]
+		})
+			.toString()
+			.trim();
+	} catch {
+		return null;
+	}
+};
+
+const commit = readCommit();
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, viewport-fit=cover"
+		/>
 		<meta name="referrer" content="no-referrer" />
+		<meta name="color-scheme" content="dark light" />
 		<title>Aspine</title>
 	</head>
 	<body>
-		<h1>Aspine</h1>
-		<LoginForm client:load />
+		<header class="pageTop">aspine v5</header>
+		<main class="loginPage">
+			<div class="loginPanel">
+				<h1 class="loginTitle">Sign in</h1>
+				<LoginForm client:load />
+			</div>
+		</main>
+		<footer class="pageBottom">
+			{commit ? (
+				<a
+					href={`${REPO_URL}/commit/${commit}`}
+					target="_blank"
+					rel="noreferrer"
+				>
+					#{commit.slice(0, 7)}
+				</a>
+			) : (
+				<span />
+			)}
+			<a href={REPO_URL} target="_blank" rel="noreferrer">
+				{REPO_URL.replace("https://", "")}
+			</a>
+		</footer>
 	</body>
 </html>

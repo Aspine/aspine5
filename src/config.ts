@@ -1,3 +1,5 @@
+export const REPO_URL = "https://github.com/aspine/aspine5";
+
 export const HEADLESS = true;
 
 export const ASPEN_LOGIN_URL =

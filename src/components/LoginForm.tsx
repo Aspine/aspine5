@@ -1,5 +1,5 @@
-import { useState } from "preact/hooks";
-import { ApiTester } from "./ApiTester";
+import { ArrowRight, LoaderCircle } from "lucide-preact";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 type LoginResponse =
 	| { sessionId: string }
@@ -12,8 +12,13 @@ export const LoginForm = () => {
 	const [answer, setAnswer] = useState("");
 	const [response, setResponse] = useState<LoginResponse | null>(null);
 	const [pending, setPending] = useState(false);
+	const answerInput = useRef<HTMLInputElement>(null);
 
 	const captcha = response && "loginId" in response ? response : null;
+
+	useEffect(() => {
+		if (captcha) answerInput.current?.focus();
+	}, [captcha?.loginId]);
 
 	const submit = async (event: Event) => {
 		event.preventDefault();
@@ -35,55 +40,95 @@ export const LoginForm = () => {
 
 	if (response && "sessionId" in response)
 		return (
-			<>
-				<p>
-					JSESSIONID <code>{response.sessionId}</code>
-				</p>
-				<ApiTester />
-			</>
+			<div class="loginSuccess">
+				<p>Success</p>
+				<code>{response.sessionId}</code>
+			</div>
 		);
 
 	return (
-		<form onSubmit={submit}>
+		<form class="loginForm" onSubmit={submit}>
 			{captcha ? (
-				<p>
-					<img src={captcha.captcha} alt="Captcha" />
-					<input
-						placeholder="Captcha"
-						autocomplete="off"
-						required
-						value={answer}
-						onInput={event => setAnswer(event.currentTarget.value)}
+				<>
+					<img
+						class="captchaImage"
+						src={captcha.captcha}
+						alt="Captcha"
 					/>
-				</p>
+					<label class="field">
+						<span>Captcha</span>
+						<input
+							ref={answerInput}
+							class="input"
+							autocomplete="off"
+							autocapitalize="off"
+							spellcheck={false}
+							required
+							disabled={pending}
+							value={answer}
+							onInput={event =>
+								setAnswer(event.currentTarget.value)
+							}
+						/>
+					</label>
+				</>
 			) : (
-				<p>
-					<input
-						type="email"
-						placeholder="School email"
-						autocomplete="username"
-						required
-						value={username}
-						onInput={event =>
-							setUsername(event.currentTarget.value)
-						}
-					/>
-					<input
-						type="password"
-						placeholder="Password"
-						autocomplete="current-password"
-						required
-						value={password}
-						onInput={event =>
-							setPassword(event.currentTarget.value)
-						}
-					/>
+				<>
+					<label class="field">
+						<span>School email</span>
+						<input
+							class="input"
+							type="email"
+							autocomplete="username"
+							required
+							disabled={pending}
+							value={username}
+							onInput={event =>
+								setUsername(event.currentTarget.value)
+							}
+						/>
+					</label>
+					<label class="field">
+						<span>Password</span>
+						<input
+							class="input"
+							type="password"
+							autocomplete="current-password"
+							required
+							disabled={pending}
+							value={password}
+							onInput={event =>
+								setPassword(event.currentTarget.value)
+							}
+						/>
+					</label>
+				</>
+			)}
+			{response && "error" in response && (
+				<p class="loginError" role="alert">
+					{response.error}
 				</p>
 			)}
-			{response && "error" in response && <p>{response.error}</p>}
-			<button type="submit" disabled={pending}>
-				{pending ? "..." : "Login"}
+			<button class="button primary" type="submit" disabled={pending}>
+				{pending && (
+					<LoaderCircle
+						class="spinner"
+						size={18}
+						aria-hidden="true"
+					/>
+				)}
+				{captcha ? "Continue" : "Sign in"}
+				{!pending && <ArrowRight size={18} aria-hidden="true" />}
 			</button>
+			{captcha && !pending && (
+				<button
+					class="button ghost"
+					type="button"
+					onClick={() => setResponse(null)}
+				>
+					Back
+				</button>
+			)}
 		</form>
 	);
 };
