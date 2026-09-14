@@ -76,11 +76,14 @@ const waitForAspen = async (page: Page, loginUrl: string) => {
 		.catch(() => undefined);
 };
 
-const readSessionId = async (page: Page) => {
-	const fromUrl = /jsessionid=([^;?&#/]+)/i.exec(page.url())?.[1];
+const readSessionId = async (page: Page, loginUrl: string) => {
+	const aspenHost = new URL(loginUrl).hostname;
 	const cookies = await page.browserContext().cookies();
+	const fromCookie = cookies.find(
+		cookie => cookie.name === "JSESSIONID" && cookie.domain === aspenHost
+	)?.value;
 	const sessionId =
-		fromUrl ?? cookies.find(cookie => cookie.name === "JSESSIONID")?.value;
+		fromCookie ?? /jsessionid=([^;?&#/]+)/i.exec(page.url())?.[1];
 	if (!sessionId) throw new Error("no JSESSIONID");
 	return sessionId;
 };
@@ -92,7 +95,7 @@ const submitPassword = async (
 ): Promise<LoginResult> => {
 	await typeInto(page, PASSWORD_INPUT, password);
 	await waitForAspen(page, loginUrl);
-	return { sessionId: await readSessionId(page) };
+	return { sessionId: await readSessionId(page, loginUrl) };
 };
 
 const holdCaptcha = async (

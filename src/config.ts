@@ -3,6 +3,12 @@ export const HEADLESS = true;
 export const ASPEN_LOGIN_URL =
 	"https://aspen.cpsd.us/aspen/logonSSO.do?deploymentId=ma-cambridge&districtId=*dst&idpName=Cambridge%20Google%20SAML";
 
+export const ASPEN_ORIGIN = "https://aspen.cpsd.us";
+
+export const ASPEN_DEPLOYMENT_ID = "ma-cambridge";
+
+export const ASPEN_TIMEOUT_MS = 15_000;
+
 export const BROWSER_ARGS = ["--no-sandbox", "--disable-setuid-sandbox"];
 
 export const VIEWPORT = { width: 1280, height: 800, deviceScaleFactor: 1 };

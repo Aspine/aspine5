@@ -1,4 +1,5 @@
 import { useState } from "preact/hooks";
+import { ApiTester } from "./ApiTester";
 
 type LoginResponse =
 	| { sessionId: string }
@@ -34,9 +35,12 @@ export const LoginForm = () => {
 
 	if (response && "sessionId" in response)
 		return (
-			<p>
-				JSESSIONID <code>{response.sessionId}</code>
-			</p>
+			<>
+				<p>
+					JSESSIONID <code>{response.sessionId}</code>
+				</p>
+				<ApiTester />
+			</>
 		);
 
 	return (
