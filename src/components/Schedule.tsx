@@ -1,11 +1,19 @@
 import { useState } from "preact/hooks";
-import { BELL_SCHEDULES, LUNCHES, type Lunch } from "@/config";
+import {
+	BELL_SCHEDULE,
+	LUNCH_BY_FLOOR,
+	LUNCH_PERIOD,
+	LUNCHES,
+	type Lunch
+} from "@/config";
 import type { ScheduleRow } from "@/lib/types";
 import { Table } from "./Templates";
 
 export type ScheduleDay = "B" | "S" | null;
 
 type Entry = ScheduleRow & { period: string };
+
+type LunchChoice = Lunch | "Auto";
 
 export type Slot = { name: string; time: string; entry: Entry | null };
 
@@ -18,6 +26,8 @@ const DAYS: readonly (readonly [string, ScheduleDay])[] = [
 ];
 
 const SEMESTERS = ["S1", "S2"] as const;
+
+const LUNCH_CHOICES: readonly LunchChoice[] = ["Auto", ...LUNCHES];
 
 const LUNCH_KEY = "aspineLunch";
 
@@ -48,18 +58,21 @@ export const scheduleFor = (
 		})
 		.sort((first, second) => first.period.localeCompare(second.period));
 
-const periodNumber = (entry: Entry) => /\d+/.exec(entry.period)?.[0] ?? "";
+const periodNumber = (entry: Entry) => {
+	const digits = /\d+/.exec(entry.period)?.[0];
+	return digits ? String(Number(digits)) : "";
+};
 
-export const timedSchedule = (
-	entries: Entry[],
-	dayIndex: number,
-	lunch: Lunch
-): Slot[] => {
+export const lunchFor = (entries: Entry[]): Lunch | null => {
+	const room =
+		entries.find(entry => periodNumber(entry) === LUNCH_PERIOD)?.room ?? "";
+	const floor = /(?:^|\D)(\d)\d{3}(?!\d)/.exec(room)?.[1];
+	return floor ? (LUNCH_BY_FLOOR[floor] ?? null) : null;
+};
+
+export const timedSchedule = (entries: Entry[], lunch: Lunch): Slot[] => {
 	if (entries.length === 0) return [];
-	const blocks =
-		BELL_SCHEDULES[dayIndex < 3 ? "mondayToWednesday" : "thursdayFriday"][
-			lunch
-		];
+	const blocks = BELL_SCHEDULE[lunch];
 	const timed = blocks.flatMap(([name, start, end]): Slot[] => {
 		const time = `${start}–${end}`;
 		if (!/^\d+$/.test(name)) return [{ name, time, entry: null }];
@@ -77,22 +90,22 @@ const todayIndex = () => {
 	return DAYS[index] ? index : 0;
 };
 
-const readLunch = (): Lunch => {
+const readLunch = (): LunchChoice => {
 	try {
 		const saved = localStorage.getItem(LUNCH_KEY);
-		return LUNCHES.find(lunch => lunch === saved) ?? "A";
+		return LUNCH_CHOICES.find(choice => choice === saved) ?? "Auto";
 	} catch {
-		return "A";
+		return "Auto";
 	}
 };
 
 export const Schedule = ({ rows }: { rows: ScheduleRow[] }) => {
 	const [dayIndex, setDayIndex] = useState(todayIndex);
-	const [lunch, setLunch] = useState(readLunch);
+	const [choice, setChoice] = useState(readLunch);
 	const day = DAYS[dayIndex]?.[1] ?? null;
 
-	const chooseLunch = (next: Lunch) => {
-		setLunch(next);
+	const choose = (next: LunchChoice) => {
+		setChoice(next);
 		try {
 			localStorage.setItem(LUNCH_KEY, next);
 		} catch {
@@ -120,53 +133,64 @@ export const Schedule = ({ rows }: { rows: ScheduleRow[] }) => {
 				<select
 					class="select"
 					aria-label="Lunch"
-					value={lunch}
+					value={choice}
 					onChange={event =>
-						chooseLunch(event.currentTarget.value as Lunch)
+						choose(event.currentTarget.value as LunchChoice)
 					}
 				>
-					{LUNCHES.map(option => (
+					{LUNCH_CHOICES.map(option => (
 						<option key={option} value={option}>
-							Lunch {option}
+							{option === "Auto"
+								? "Auto lunch"
+								: `Lunch ${option}`}
 						</option>
 					))}
 				</select>
 			</div>
 			<div class="scheduleGrid">
-				{SEMESTERS.map(semester => (
-					<div key={semester} class="panel">
-						<div class="panelBar">
-							<h2 class="panelTitle">{semester}</h2>
+				{SEMESTERS.map(semester => {
+					const entries = scheduleFor(rows, semester, day);
+					const detected = lunchFor(entries);
+					const lunch =
+						choice === "Auto" ? (detected ?? LUNCHES[0]) : choice;
+					return (
+						<div key={semester} class="panel">
+							<div class="panelBar">
+								<h2 class="panelTitle">{semester}</h2>
+								<span class="panelDetail">
+									{choice === "Auto" && detected
+										? `Lunch ${lunch} · auto`
+										: `Lunch ${lunch}`}
+								</span>
+							</div>
+							<Table
+								columns={COLUMNS}
+								rows={timedSchedule(entries, lunch).map(
+									slot => [
+										slot.name,
+										slot.time,
+										slot.entry?.room ?? "",
+										slot.entry ? (
+											<>
+												{slot.entry.name}
+												<small>
+													{[
+														slot.entry.teacher,
+														slot.entry.course
+													]
+														.filter(Boolean)
+														.join(" · ")}
+												</small>
+											</>
+										) : (
+											""
+										)
+									]
+								)}
+							/>
 						</div>
-						<Table
-							columns={COLUMNS}
-							rows={timedSchedule(
-								scheduleFor(rows, semester, day),
-								dayIndex,
-								lunch
-							).map(slot => [
-								slot.name,
-								slot.time,
-								slot.entry?.room ?? "",
-								slot.entry ? (
-									<>
-										{slot.entry.name}
-										<small>
-											{[
-												slot.entry.teacher,
-												slot.entry.course
-											]
-												.filter(Boolean)
-												.join(" · ")}
-										</small>
-									</>
-								) : (
-									""
-								)
-							])}
-						/>
-					</div>
-				))}
+					);
+				})}
 			</div>
 		</>
 	);

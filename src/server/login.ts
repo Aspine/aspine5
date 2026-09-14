@@ -26,6 +26,8 @@ const EMAIL_INPUT = "#identifierId";
 const PASSWORD_INPUT = 'input[type="password"]:not([aria-hidden="true"])';
 const CAPTCHA_IMAGE = "#captchaimg";
 const CAPTCHA_INPUT = 'input[name="ca"]';
+const DISCONNECTED =
+	/connection closed|target closed|session closed|detached|protocol error|net::err_/i;
 
 export type LoginResult =
 	{ sessionId: string } | { loginId: string; captcha: string };
@@ -39,6 +41,9 @@ const warmPages: {
 	page: Promise<Page>;
 }[] = [];
 
+export const isDisconnect = (error: unknown) =>
+	error instanceof Error && DISCONNECTED.test(error.message);
+
 export const loginAllowed = (key: string, now = Date.now()) => {
 	const recent = (loginAttempts.get(key) ?? []).filter(
 		time => now - time < LOGIN_WINDOW_MS
@@ -48,22 +53,40 @@ export const loginAllowed = (key: string, now = Date.now()) => {
 	return allowed;
 };
 
-const getBrowser = () =>
-	(browser ??= (
+const getBrowser = async (): Promise<Browser> => {
+	const pending = browser;
+	const current = pending ? await pending.catch(() => null) : null;
+	if (current?.connected) return current;
+	if (browser !== pending) return getBrowser();
+	void current?.close().catch(() => undefined);
+	const next: Promise<Browser> = (
 		puppeteer.launch({
 			headless: HEADLESS,
 			args: BROWSER_ARGS
 		}) as unknown as Promise<Browser>
-	).catch(error => {
-		browser = null;
-		throw error;
-	}));
+	).then(
+		launched => {
+			launched.on("disconnected", () => {
+				if (browser !== next) return;
+				browser = null;
+				warmPages.length = 0;
+			});
+			return launched;
+		},
+		error => {
+			if (browser === next) browser = null;
+			throw error;
+		}
+	);
+	browser = next;
+	return next;
+};
 
 export const closeBrowser = async () => {
 	const current = browser;
 	browser = null;
 	warmPages.length = 0;
-	await (await current)?.close();
+	await (await current?.catch(() => null))?.close();
 };
 
 const openLoginPage = async (loginUrl: string) => {
@@ -91,7 +114,7 @@ export const warmLogin = (loginUrl = ASPEN_LOGIN_URL, now = Date.now()) => {
 			entry.loginUrl === loginUrl &&
 			entry.expires - now > WARM_LOGIN_TTL_MS / 2
 	);
-	if (fresh) return;
+	if (fresh) return undefined;
 	if (warmPages.length >= WARM_LOGIN_PAGES)
 		closeWarm(warmPages.shift()!.page);
 	const entry = {
@@ -109,17 +132,16 @@ export const warmLogin = (loginUrl = ASPEN_LOGIN_URL, now = Date.now()) => {
 	setTimeout(() => {
 		if (drop()) closeWarm(entry.page);
 	}, WARM_LOGIN_TTL_MS);
+	return entry.page;
 };
 
-const takeLoginPage = (loginUrl: string) => {
+const takeLoginPage = async (loginUrl: string) => {
 	const index = warmPages.findLastIndex(entry => entry.loginUrl === loginUrl);
 	const [entry] = index >= 0 ? warmPages.splice(index, 1) : [];
-	return entry
-		? entry.page.then(
-				page => (page.isClosed() ? openLoginPage(loginUrl) : page),
-				() => openLoginPage(loginUrl)
-			)
-		: openLoginPage(loginUrl);
+	const warm = entry ? await entry.page.catch(() => null) : null;
+	return warm && !warm.isClosed() && warm.browser().connected
+		? { page: warm, warm: true }
+		: { page: await openLoginPage(loginUrl), warm: false };
 };
 
 const typeInto = async (page: Page, selector: string, value: string) => {
@@ -193,7 +215,11 @@ const holdCaptcha = async (
 	const loginId = randomUUID();
 	pendingCaptchas.set(loginId, { page, loginUrl });
 	setTimeout(() => {
-		if (pendingCaptchas.delete(loginId)) void page.browserContext().close();
+		if (pendingCaptchas.delete(loginId))
+			void page
+				.browserContext()
+				.close()
+				.catch(() => undefined);
 	}, CAPTCHA_TTL_MS);
 	return { loginId, captcha: `data:image/png;base64,${image}` };
 };
@@ -201,7 +227,11 @@ const holdCaptcha = async (
 const run = async (page: Page, steps: () => Promise<LoginResult>) => {
 	try {
 		const result = await steps();
-		if ("sessionId" in result) await page.browserContext().close();
+		if ("sessionId" in result)
+			await page
+				.browserContext()
+				.close()
+				.catch(() => undefined);
 		return result;
 	} catch (error) {
 		await page
@@ -212,13 +242,13 @@ const run = async (page: Page, steps: () => Promise<LoginResult>) => {
 	}
 };
 
-export const startLogin = async (
+const signIn = (
+	page: Page,
 	username: string,
 	password: string,
-	loginUrl = ASPEN_LOGIN_URL
-) => {
-	const page = await takeLoginPage(loginUrl);
-	return run(page, async () => {
+	loginUrl: string
+) =>
+	run(page, async () => {
 		await typeInto(page, EMAIL_INPUT, username);
 		const next = await page.waitForSelector(
 			`${CAPTCHA_IMAGE}, ${PASSWORD_INPUT}`,
@@ -228,6 +258,29 @@ export const startLogin = async (
 			? holdCaptcha(page, loginUrl)
 			: submitPassword(page, password, loginUrl);
 	});
+
+export const startLogin = async (
+	username: string,
+	password: string,
+	loginUrl = ASPEN_LOGIN_URL
+) => {
+	const first = await takeLoginPage(loginUrl).catch(() => null);
+	try {
+		if (!first) throw new Error("connection closed");
+		return await signIn(first.page, username, password, loginUrl);
+	} catch (error) {
+		const staleWarm =
+			first?.warm === true &&
+			error instanceof Error &&
+			error.name === "TimeoutError";
+		if (!isDisconnect(error) && !staleWarm) throw error;
+		return signIn(
+			await openLoginPage(loginUrl),
+			username,
+			password,
+			loginUrl
+		);
+	}
 };
 
 export const continueLogin = async (

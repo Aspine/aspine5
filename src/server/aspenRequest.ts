@@ -157,13 +157,15 @@ export const toResponse = (
 
 export const aspenPage = async (sessionId: string, path: string) => {
 	const response = await aspenFetch(sessionId, path);
+	const html = responseText(response);
 	if (
 		response.status === 401 ||
 		response.status === 403 ||
-		/logon|aspen-login/i.test(response.url)
+		/logon|aspen-login/i.test(response.url) ||
+		/<title>[^<]*not(?:&nbsp;|\s)+logged(?:&nbsp;|\s)+on/i.test(html)
 	)
 		throw sessionError();
-	return responseText(response);
+	return html;
 };
 
 export const pageTitle = (html: string) =>

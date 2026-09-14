@@ -51,8 +51,11 @@ export const formatPercent = (percent: number | null) =>
 export const letterGrade = (percent: number) =>
 	LETTERS.find(([minimum]) => percent >= minimum)?.[1] ?? "F";
 
-export const gradeTone = (percent: number | null) =>
-	percent === null ? undefined : letterGrade(percent).charAt(0).toLowerCase();
+export const gradeTone = (percent: number | null) => {
+	if (percent === null) return undefined;
+	const letter = letterGrade(percent);
+	return letter === "A+" ? "rainbow" : letter.charAt(0).toLowerCase();
+};
 
 export const formatGrade = (percent: number | null) =>
 	percent === null ? "" : `${percent.toFixed(2)} ${letterGrade(percent)}`;

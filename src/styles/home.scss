@@ -117,8 +117,18 @@ $phone: "(max-width: 699px)";
 					display: none;
 				}
 
-				&[aria-pressed="true"] svg {
-					color: var(--text);
+				& {
+					& span,
+					& svg {
+						color: var(--textIcon)
+					}
+
+					&[aria-pressed="true"] {
+						& span,
+						& svg {
+							color: var(--textIcon2)
+						}
+					}
 				}
 			}
 
@@ -163,7 +173,7 @@ $phone: "(max-width: 699px)";
 	padding: 0 12px;
 	border: 0;
 	background: transparent;
-	color: var(--textMuted);
+	color: inherit;
 	font: inherit;
 	font-size: 0.875rem;
 	white-space: nowrap;
@@ -317,12 +327,12 @@ $phone: "(max-width: 699px)";
 	border: 0;
 	border-radius: 10px;
 	background: transparent;
-	color: var(--textMuted);
+	color: var(--textIcon);
 	cursor: pointer;
 	transition: color var(--fast) var(--ease);
 
 	&:hover {
-		color: var(--text);
+		color: var(--textIcon2);
 	}
 }
 
@@ -476,11 +486,11 @@ $phone: "(max-width: 699px)";
 	gap: 8px;
 	min-height: 44px;
 	padding: 6px 8px 6px 16px;
-	border-bottom: 1px solid var(--frame);
+	border-bottom: 1px solid var(--layer2);
 	background: var(--layer1);
 
 	&:not(:first-child) {
-		border-top: 1px solid var(--frame);
+		border-top: 1px solid var(--layer2);
 	}
 }
 
@@ -860,6 +870,13 @@ select.cellInput {
 }
 [data-tone="f"] {
 	color: var(--gradeF);
+}
+[data-tone="rainbow"] {
+	background: var(--rainbow);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	font-weight: 600;
 }
 
 .home {

@@ -3,6 +3,7 @@ import { prefetchHome } from "@/server/aspenFeatures";
 import { measured } from "@/server/aspenRequest";
 import {
 	continueLogin,
+	isDisconnect,
 	loginAllowed,
 	startLogin,
 	warmLogin
@@ -52,9 +53,14 @@ export const POST: APIRoute = async context => {
 		return Response.json(result, { headers: NO_STORE });
 	} catch (error) {
 		console.error("login", error instanceof Error ? error.message : error);
-		return Response.json(
-			{ error: "Login failed" },
-			{ status: 401, headers: NO_STORE }
-		);
+		return isDisconnect(error)
+			? Response.json(
+					{ error: "No connection" },
+					{ status: 503, headers: NO_STORE }
+				)
+			: Response.json(
+					{ error: "Login failed" },
+					{ status: 401, headers: NO_STORE }
+				);
 	}
 };

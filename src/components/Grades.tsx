@@ -174,8 +174,10 @@ const AssignmentRow = ({
 					onValue={maxScore => onUpdate({ maxScore })}
 				/>
 			</td>
-			<td class="numeric" data-tone={gradeTone(percent)}>
-				{formatPercent(percent) || assignment.special}
+			<td class="numeric">
+				<span data-tone={gradeTone(percent)}>
+					{formatPercent(percent) || assignment.special}
+				</span>
 			</td>
 			<td class="iconCell">
 				{assignment.score !== null && (
@@ -426,11 +428,10 @@ const ClassDetail = ({
 							</td>
 							<td class="numeric">{total.score}</td>
 							<td class="numeric">{total.maxScore}</td>
-							<td
-								class="numeric"
-								data-tone={gradeTone(total.percent)}
-							>
-								{formatPercent(total.percent)}
+							<td class="numeric">
+								<span data-tone={gradeTone(total.percent)}>
+									{formatPercent(total.percent)}
+								</span>
 							</td>
 						</tr>
 					))}
@@ -546,12 +547,13 @@ export const Grades = ({
 								}
 							>
 								<td class="className">{item.name}</td>
-								<td
-									class="numeric"
-									data-tone={gradeTone(grade)}
-								>
-									{formatGrade(grade) || (
+								<td class="numeric">
+									{grade === null ? (
 										<span class="muted">–</span>
+									) : (
+										<span data-tone={gradeTone(grade)}>
+											{formatGrade(grade)}
+										</span>
 									)}
 									{edited && (
 										<small>
