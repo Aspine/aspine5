@@ -33,18 +33,11 @@ export const LoginForm = () => {
 		})
 			.then(reply => reply.json() as Promise<LoginResponse>)
 			.catch(() => ({ error: "Network error" }));
+		if ("sessionId" in result) return location.assign("/home");
 		setResponse(result);
 		setAnswer("");
 		setPending(false);
 	};
-
-	if (response && "sessionId" in response)
-		return (
-			<div class="loginSuccess">
-				<p>Success</p>
-				<code>{response.sessionId}</code>
-			</div>
-		);
 
 	return (
 		<form class="loginForm" onSubmit={submit}>

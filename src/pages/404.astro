@@ -1,5 +1,4 @@
 ---
-import { LoginForm } from "../components/LoginForm";
 import Page from "../layouts/Page.astro";
 import "../styles/login.scss";
 ---
@@ -7,8 +6,10 @@ import "../styles/login.scss";
 <Page>
 	<main class="loginPage">
 		<div class="loginPanel">
-			<h1 class="loginTitle">Sign in</h1>
-			<LoginForm client:load />
+			<h1 class="loginTitle">Not found</h1>
+			<a class="button primary" href="/">
+				Sign in
+			</a>
 		</div>
 	</main>
 </Page>
