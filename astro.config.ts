@@ -26,7 +26,11 @@ export default defineConfig({
 	},
 	vite: {
 		ssr: {
-			external: ["puppeteer", "puppeteer-extra", "puppeteer-extra-plugin-stealth"]
+			external: [
+				"puppeteer",
+				"puppeteer-extra",
+				"puppeteer-extra-plugin-stealth"
+			]
 		}
 	}
 });

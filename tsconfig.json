@@ -7,9 +7,8 @@
 		"jsxImportSource": "preact",
 		"types": ["bun"],
 		"noPropertyAccessFromIndexSignature": false,
-		"baseUrl": ".",
 		"paths": {
-			"@/*": ["src/*"]
+			"@/*": ["./src/*"]
 		}
 	}
 }

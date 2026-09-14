@@ -9,10 +9,13 @@
 		"build": "bunx --bun astro build",
 		"start": "bun dist/server/entry.mjs",
 		"preview": "bun run build && bun run start",
-		"check": "bunx --bun astro check && bunx prettier --check .",
+		"test": "bun test ./tests",
+		"check": "bunx tsc --noEmit && bunx prettier --check .",
 		"format": "bunx prettier --write ."
 	},
-	"trustedDependencies": ["puppeteer"],
+	"trustedDependencies": [
+		"puppeteer"
+	],
 	"dependencies": {
 		"@astrojs/node": "^11.1.5",
 		"@astrojs/preact": "^6.0.5",
