@@ -1,4 +1,14 @@
-import { LogOut, Moon, Sun } from "lucide-preact";
+import {
+	CalendarDays,
+	CalendarClock,
+	FileText,
+	GraduationCap,
+	History,
+	LogOut,
+	Moon,
+	Sun,
+	type LucideIcon
+} from "lucide-preact";
 import type { ComponentChildren } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import {
@@ -26,6 +36,13 @@ import { Schedule } from "./Schedule";
 import { Loaded, Menu, Toggle } from "./Templates";
 
 const TABS = ["Grades", "Schedule", "Attendance & Recent", "Reports"] as const;
+
+const TAB_DETAILS: Record<Tab, [LucideIcon, string]> = {
+	Grades: [GraduationCap, "Grades"],
+	Schedule: [CalendarClock, "Schedule"],
+	"Attendance & Recent": [History, "Recent"],
+	Reports: [FileText, "Reports"]
+};
 
 const GPA_LABELS: Record<GpaKey, string> = {
 	percent: "Percent",
@@ -236,11 +253,20 @@ export const Home = () => {
 				<div class="chromeSection" data-layer="1">
 					<Menu
 						label={
-							imported
-								? "Imported"
-								: year === "current"
-									? "Current Year"
-									: "Previous Year"
+							<>
+								<CalendarDays
+									size={16}
+									class="menuIcon"
+									aria-hidden="true"
+								/>
+								<span class="menuText">
+									{imported
+										? "Imported"
+										: year === "current"
+											? "Current Year"
+											: "Previous Year"}
+								</span>
+							</>
 						}
 						groups={[
 							[
@@ -333,6 +359,20 @@ export const Home = () => {
 						options={TABS}
 						value={tab}
 						variant="tab"
+						label={option => {
+							const [Icon, short] = TAB_DETAILS[option];
+							return (
+								<>
+									<Icon
+										size={18}
+										class="tabIcon"
+										aria-hidden="true"
+									/>
+									<span class="tabFull">{option}</span>
+									<span class="tabShort">{short}</span>
+								</>
+							);
+						}}
 						onChange={setTab}
 					/>
 					<Curve />

@@ -82,11 +82,13 @@ export const Toggle = <T extends string>({
 	options,
 	value,
 	variant,
+	label = option => option,
 	onChange
 }: {
 	options: readonly T[];
 	value: T;
 	variant: "tab" | "button";
+	label?: (option: T) => ComponentChildren;
 	onChange: (value: T) => void;
 }) => (
 	<>
@@ -98,7 +100,7 @@ export const Toggle = <T extends string>({
 				aria-pressed={option === value}
 				onClick={() => onChange(option)}
 			>
-				{option}
+				{label(option)}
 			</button>
 		))}
 	</>

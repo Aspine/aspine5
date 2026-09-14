@@ -1,8 +1,16 @@
+$tabBar: "(max-width: 999px)";
+$phone: "(max-width: 699px)";
+
 .home {
 	--chromeHeight: 42px;
 	--footerHeight: calc(28px + env(safe-area-inset-bottom));
 	--frameGap: 6px;
+	--tabBarHeight: 0px;
 	position: fixed;
+
+	@media #{$tabBar} {
+		--tabBarHeight: 56px;
+	}
 	inset: 0;
 	background: var(--layer0);
 
@@ -80,6 +88,55 @@
 	&[data-layer="2"] > button:last-of-type {
 		margin-right: -16px;
 	}
+
+	@media #{$tabBar} {
+		&[data-layer="2"] {
+			position: fixed;
+			inset: auto 0 var(--footerHeight);
+			gap: 0;
+			height: var(--tabBarHeight);
+			padding: 0 var(--frameGap);
+			background: var(--frame);
+
+			> .curve {
+				display: none;
+			}
+
+			> button.tab {
+				flex: 1;
+				flex-direction: column;
+				justify-content: center;
+				gap: 3px;
+				min-width: 0;
+				padding: 0 4px;
+				margin: 0;
+				font-size: 0.6875rem;
+				line-height: 1.2;
+
+				&::after {
+					bottom: 4px;
+				}
+
+				&[aria-pressed="true"] svg {
+					color: var(--text);
+				}
+			}
+
+			.tabIcon,
+			.tabShort {
+				display: block;
+			}
+
+			.tabFull {
+				display: none;
+			}
+		}
+	}
+}
+
+.tabIcon,
+.tabShort {
+	display: none;
 }
 
 .curve {
@@ -161,6 +218,48 @@
 	font-variant-numeric: tabular-nums;
 }
 
+.menuIcon {
+	display: none;
+}
+
+@media #{$phone} {
+	.chromeSection {
+		&[data-layer="0"] {
+			padding-left: 12px;
+		}
+
+		&[data-layer="1"] {
+			padding-left: 34px;
+		}
+
+		&[data-layer="3"] {
+			padding-left: 34px;
+		}
+	}
+
+	.brand {
+		padding-right: 0;
+	}
+
+	.menuButton {
+		gap: 4px;
+		padding: 0 8px;
+	}
+
+	.menuIcon {
+		display: block;
+	}
+
+	.menuText {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+}
+
 .menu {
 	position: fixed;
 	z-index: 60;
@@ -232,7 +331,7 @@
 .viewport {
 	position: absolute;
 	inset: calc(var(--chromeHeight) + var(--frameGap)) var(--frameGap)
-		var(--footerHeight);
+		calc(var(--footerHeight) + var(--tabBarHeight));
 	z-index: 1;
 	overflow: auto;
 	padding: 16px;
