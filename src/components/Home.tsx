@@ -18,6 +18,7 @@ import {
 	classGrade,
 	computeGpa,
 	parseNumber,
+	sameAssignments,
 	type Gpa,
 	type GpaKey
 } from "@/lib/grades";
@@ -261,15 +262,18 @@ export const Home = ({
 		gpa === null ? "–" : gpa[gpaKey].toFixed(2);
 
 	const editClass: EditClass = (classOid, change) =>
-		setEdits(previous => ({
-			...previous,
-			[classOid]: change(
-				previous[classOid] ??
-					data?.classes.find(item => item.oid === classOid)
-						?.assignments ??
-					[]
-			)
-		}));
+		setEdits(previous => {
+			const original =
+				data?.classes.find(item => item.oid === classOid)
+					?.assignments ?? [];
+			const next = change(previous[classOid] ?? original);
+			const others = Object.fromEntries(
+				Object.entries(previous).filter(([key]) => key !== classOid)
+			);
+			return sameAssignments(next, original)
+				? others
+				: { ...others, [classOid]: next };
+		});
 
 	const deleteAssignment: DeleteAssignment = (
 		classOid,
@@ -534,7 +538,6 @@ export const Home = ({
 					<Toggle
 						options={TABS}
 						value={tab}
-						variant="tab"
 						label={tabLabel}
 						onChange={openTab}
 					/>

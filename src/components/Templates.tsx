@@ -105,13 +105,11 @@ export const Loaded = <T,>({
 export const Toggle = <T extends string>({
 	options,
 	value,
-	variant,
 	label = option => option,
 	onChange
 }: {
 	options: readonly T[];
 	value: T;
-	variant: "tab" | "button";
 	label?: (option: T) => ComponentChildren;
 	onChange: (value: T) => void;
 }) => (
@@ -120,7 +118,7 @@ export const Toggle = <T extends string>({
 			<button
 				key={option}
 				type="button"
-				class={variant}
+				class="tab"
 				aria-pressed={option === value}
 				onClick={() => onChange(option)}
 			>

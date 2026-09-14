@@ -1,4 +1,4 @@
-$tabBar: "(max-width: 999px)";
+$tabBar: "(max-width: 859px)";
 $phone: "(max-width: 699px)";
 
 .home {
@@ -120,13 +120,13 @@ $phone: "(max-width: 699px)";
 				& {
 					& span,
 					& svg {
-						color: var(--textIcon)
+						color: var(--textIcon);
 					}
 
 					&[aria-pressed="true"] {
 						& span,
 						& svg {
-							color: var(--textIcon2)
+							color: var(--textIcon2);
 						}
 					}
 				}
@@ -413,18 +413,77 @@ $phone: "(max-width: 699px)";
 	text-decoration: none;
 }
 
-.home .button[aria-pressed="true"] {
-	border-color: var(--lineStrong);
-	background: var(--surfaceHover);
-	color: var(--text);
-}
-
 .select {
-	border: 1px solid var(--line);
-	background: var(--surfaceRaised);
-	color: var(--text);
+	padding-right: 32px;
+	border: 1px solid var(--frame);
+	background: transparent var(--chevron) no-repeat right 10px center / 14px
+		14px;
+	color: var(--textMuted);
 	font: inherit;
 	font-size: 0.8125rem;
+	appearance: none;
+	cursor: pointer;
+	transition: color var(--fast) var(--ease);
+
+	&:hover {
+		color: var(--text);
+	}
+
+	option {
+		background: var(--surface);
+		color: var(--text);
+	}
+}
+
+.panelBar .tab {
+	position: relative;
+	height: 32px;
+	padding: 0 10px;
+	border: 0;
+	background: transparent;
+	color: var(--textMuted);
+	font: inherit;
+	font-size: 0.8125rem;
+	cursor: pointer;
+	transition: color var(--fast) var(--ease);
+
+	&:first-child {
+		margin-left: -10px;
+	}
+
+	&:hover,
+	&[aria-pressed="true"] {
+		color: var(--text);
+	}
+
+	&::after {
+		position: absolute;
+		right: 8px;
+		bottom: 2px;
+		left: 8px;
+		height: 2px;
+		border-radius: 2px;
+		background: transparent;
+		content: "";
+		transform: skewX(-37deg);
+		transition: background-color var(--fast) var(--ease);
+	}
+
+	&[aria-pressed="true"]::after {
+		background: var(--accent);
+	}
+}
+
+.panelBar .button {
+	border-color: transparent;
+	background: transparent;
+	color: var(--textMuted);
+	font-weight: 400;
+
+	&:hover:not(:disabled) {
+		background: transparent;
+		color: var(--text);
+	}
 }
 
 .status {
@@ -574,6 +633,7 @@ $phone: "(max-width: 699px)";
 	max-height: 30dvh;
 	margin: 0;
 	padding: 4px;
+	padding-right: 1px;
 	overflow-x: hidden;
 	overflow-y: auto;
 	list-style: none;
@@ -703,6 +763,25 @@ $phone: "(max-width: 699px)";
 
 .panel .table td:first-child:has(> .cellInput) {
 	padding-left: 7px;
+}
+
+.table .numeric small {
+	display: inline;
+	margin: 0 0 0 8px;
+}
+
+.scheduleGrid .table td {
+	height: 62px;
+	white-space: nowrap;
+}
+
+.currentRow {
+	background: var(--surfaceRaised);
+	box-shadow: inset 2px 0 0 var(--accent);
+
+	td:first-child {
+		font-weight: 600;
+	}
 }
 
 .clickable {

@@ -3,7 +3,7 @@ import { useState } from "preact/hooks";
 import type { ClassData, RecentData } from "@/lib/types";
 import { Table, Toggle } from "./Templates";
 
-const VIEWS = ["Attendance", "Recent Activity", "Totals"] as const;
+const VIEWS = ["Totals", "Attendance", "Recent Activity"] as const;
 
 type View = (typeof VIEWS)[number];
 
@@ -35,7 +35,7 @@ export const Recent = ({
 	recent: RecentData;
 	classes: ClassData[];
 }) => {
-	const [view, setView] = useState<View>("Attendance");
+	const [view, setView] = useState<View>("Totals");
 
 	const tables: Record<View, ComponentChildren> = {
 		Attendance: (
@@ -76,12 +76,7 @@ export const Recent = ({
 	return (
 		<div class="panel">
 			<div class="panelBar">
-				<Toggle
-					options={VIEWS}
-					value={view}
-					variant="button"
-					onChange={setView}
-				/>
+				<Toggle options={VIEWS} value={view} onChange={setView} />
 			</div>
 			{tables[view]}
 		</div>

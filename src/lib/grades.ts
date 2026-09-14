@@ -40,6 +40,9 @@ const sum = (values: number[]) =>
 
 const averageOf = (values: number[]) => sum(values) / values.length;
 
+export const sameAssignments = (first: Assignment[], second: Assignment[]) =>
+	JSON.stringify(first) === JSON.stringify(second);
+
 export const parseNumber = (value: string) => {
 	const parsed = Number.parseFloat(value);
 	return Number.isFinite(parsed) ? parsed : null;

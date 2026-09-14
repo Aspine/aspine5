@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import {
 	BELL_SCHEDULE,
 	LUNCH_BY_FLOOR,
@@ -15,7 +15,13 @@ type Entry = ScheduleRow & { period: string };
 
 type LunchChoice = Lunch | "Auto";
 
-export type Slot = { name: string; time: string; entry: Entry | null };
+export type Slot = {
+	name: string;
+	time: string;
+	start: number;
+	end: number;
+	entry: Entry | null;
+};
 
 const DAYS: readonly (readonly [string, ScheduleDay])[] = [
 	["Monday (Silver)", "S"],
@@ -30,6 +36,8 @@ const SEMESTERS = ["S1", "S2"] as const;
 const LUNCH_CHOICES: readonly LunchChoice[] = ["Auto", ...LUNCHES];
 
 const LUNCH_KEY = "aspineLunch";
+
+const CLOCK_MS = 30_000;
 
 const COLUMNS = [
 	{ label: "Period" },
@@ -63,6 +71,11 @@ const periodNumber = (entry: Entry) => {
 	return digits ? String(Number(digits)) : "";
 };
 
+export const minutesOf = (time: string) => {
+	const [hours = 0, minutes = 0] = time.split(":").map(Number);
+	return (hours < 7 ? hours + 12 : hours) * 60 + minutes;
+};
+
 export const lunchFor = (entries: Entry[]): Lunch | null => {
 	const room =
 		entries.find(entry => periodNumber(entry) === LUNCH_PERIOD)?.room ?? "";
@@ -73,15 +86,32 @@ export const lunchFor = (entries: Entry[]): Lunch | null => {
 export const timedSchedule = (entries: Entry[], lunch: Lunch): Slot[] => {
 	if (entries.length === 0) return [];
 	const blocks = BELL_SCHEDULE[lunch];
-	const timed = blocks.flatMap(([name, start, end]): Slot[] => {
-		const time = `${start}–${end}`;
-		if (!/^\d+$/.test(name)) return [{ name, time, entry: null }];
+	const timed = blocks.flatMap(([name, from, to]): Slot[] => {
+		const slot = {
+			time: `${from}–${to}`,
+			start: minutesOf(from),
+			end: minutesOf(to)
+		};
+		if (!/^\d+$/.test(name))
+			return [
+				{
+					...slot,
+					name: name === "Lunch" ? `Lunch ${lunch}` : name,
+					entry: null
+				}
+			];
 		const entry = entries.find(item => periodNumber(item) === name);
-		return entry ? [{ name: entry.period, time, entry }] : [];
+		return entry ? [{ ...slot, name: entry.period, entry }] : [];
 	});
 	const untimed = entries
 		.filter(entry => !blocks.some(([name]) => name === periodNumber(entry)))
-		.map(entry => ({ name: entry.period, time: "", entry }));
+		.map(entry => ({
+			name: entry.period,
+			time: "",
+			start: -1,
+			end: -1,
+			entry
+		}));
 	return [...timed, ...untimed];
 };
 
@@ -102,7 +132,17 @@ const readLunch = (): LunchChoice => {
 export const Schedule = ({ rows }: { rows: ScheduleRow[] }) => {
 	const [dayIndex, setDayIndex] = useState(todayIndex);
 	const [choice, setChoice] = useState(readLunch);
+	const [now, setNow] = useState(() => new Date());
 	const day = DAYS[dayIndex]?.[1] ?? null;
+	const minutes =
+		now.getDay() - 1 === dayIndex
+			? now.getHours() * 60 + now.getMinutes()
+			: -1;
+
+	useEffect(() => {
+		const timer = setInterval(() => setNow(new Date()), CLOCK_MS);
+		return () => clearInterval(timer);
+	}, []);
 
 	const choose = (next: LunchChoice) => {
 		setChoice(next);
@@ -150,44 +190,67 @@ export const Schedule = ({ rows }: { rows: ScheduleRow[] }) => {
 			<div class="scheduleGrid">
 				{SEMESTERS.map(semester => {
 					const entries = scheduleFor(rows, semester, day);
-					const detected = lunchFor(entries);
 					const lunch =
-						choice === "Auto" ? (detected ?? LUNCHES[0]) : choice;
+						choice === "Auto"
+							? (lunchFor(entries) ?? LUNCHES[0])
+							: choice;
+					const slots = timedSchedule(entries, lunch);
 					return (
 						<div key={semester} class="panel">
 							<div class="panelBar">
 								<h2 class="panelTitle">{semester}</h2>
-								<span class="panelDetail">
-									{choice === "Auto" && detected
-										? `Lunch ${lunch} · auto`
-										: `Lunch ${lunch}`}
-								</span>
 							</div>
-							<Table
-								columns={COLUMNS}
-								rows={timedSchedule(entries, lunch).map(
-									slot => [
-										slot.name,
-										slot.time,
-										slot.entry?.room ?? "",
-										slot.entry ? (
-											<>
-												{slot.entry.name}
-												<small>
-													{[
-														slot.entry.teacher,
-														slot.entry.course
-													]
-														.filter(Boolean)
-														.join(" · ")}
-												</small>
-											</>
-										) : (
-											""
-										)
-									]
-								)}
-							/>
+							{slots.length === 0 ? (
+								<p class="panelEmpty">None</p>
+							) : (
+								<Table columns={COLUMNS}>
+									{slots.map(slot => {
+										const current =
+											slot.start <= minutes &&
+											minutes < slot.end;
+										return (
+											<tr
+												key={`${slot.name}${slot.time}`}
+												class={
+													current
+														? "currentRow"
+														: undefined
+												}
+												aria-current={
+													current ? "time" : undefined
+												}
+											>
+												<td>{slot.name}</td>
+												<td>{slot.time}</td>
+												<td>
+													{slot.entry?.room ?? ""}
+												</td>
+												<td>
+													{slot.entry && (
+														<>
+															{slot.entry.name}
+															<small>
+																{[
+																	slot.entry
+																		.teacher,
+																	slot.entry
+																		.course
+																]
+																	.filter(
+																		Boolean
+																	)
+																	.join(
+																		" · "
+																	)}
+															</small>
+														</>
+													)}
+												</td>
+											</tr>
+										);
+									})}
+								</Table>
+							)}
 						</div>
 					);
 				})}
