@@ -1,0 +1,34 @@
+{
+	"name": "aspine",
+	"type": "module",
+	"engines": {
+		"bun": ">=1.4.0"
+	},
+	"scripts": {
+		"dev": "bunx --bun astro dev",
+		"build": "bunx --bun astro build",
+		"start": "bun dist/server/entry.mjs",
+		"preview": "bun run build && bun run start",
+		"check": "bunx --bun astro check && bunx prettier --check .",
+		"format": "bunx prettier --write ."
+	},
+	"trustedDependencies": ["puppeteer"],
+	"dependencies": {
+		"@astrojs/node": "^11.1.5",
+		"@astrojs/preact": "^6.0.5",
+		"astro": "^7.3.2",
+		"lucide-preact": "^1.45.0",
+		"preact": "^10.29.8",
+		"puppeteer": "^25.10.0",
+		"puppeteer-extra": "^3.3.6",
+		"puppeteer-extra-plugin-stealth": "^2.11.2"
+	},
+	"devDependencies": {
+		"@astrojs/check": "^0.9.10",
+		"@types/bun": "^1.4.2",
+		"prettier": "^3.9.6",
+		"prettier-plugin-astro": "^1.0.0",
+		"sass-embedded": "^1.104.1",
+		"typescript": "^7.0.2"
+	}
+}
