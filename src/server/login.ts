@@ -15,7 +15,9 @@ import {
 	LOGIN_WINDOW_MS,
 	NAVIGATION_TIMEOUT_MS,
 	SELECTOR_TIMEOUT_MS,
-	VIEWPORT
+	VIEWPORT,
+	WARM_LOGIN_PAGES,
+	WARM_LOGIN_TTL_MS
 } from "@/config";
 
 puppeteer.use(stealthPlugin());
@@ -31,6 +33,11 @@ export type LoginResult =
 let browser: Promise<Browser> | null = null;
 const pendingCaptchas = new Map<string, { page: Page; loginUrl: string }>();
 const loginAttempts = new Map<string, number[]>();
+const warmPages: {
+	loginUrl: string;
+	expires: number;
+	page: Promise<Page>;
+}[] = [];
 
 export const loginAllowed = (key: string, now = Date.now()) => {
 	const recent = (loginAttempts.get(key) ?? []).filter(
@@ -55,7 +62,64 @@ const getBrowser = () =>
 export const closeBrowser = async () => {
 	const current = browser;
 	browser = null;
+	warmPages.length = 0;
 	await (await current)?.close();
+};
+
+const openLoginPage = async (loginUrl: string) => {
+	const context = await (await getBrowser()).createBrowserContext();
+	try {
+		const page = await context.newPage();
+		await page.setViewport(VIEWPORT);
+		page.setDefaultNavigationTimeout(NAVIGATION_TIMEOUT_MS);
+		await page.goto(loginUrl);
+		return page;
+	} catch (error) {
+		await context.close().catch(() => undefined);
+		throw error;
+	}
+};
+
+const closeWarm = (page: Promise<Page>) =>
+	void page
+		.then(opened => opened.browserContext().close())
+		.catch(() => undefined);
+
+export const warmLogin = (loginUrl = ASPEN_LOGIN_URL, now = Date.now()) => {
+	const fresh = warmPages.some(
+		entry =>
+			entry.loginUrl === loginUrl &&
+			entry.expires - now > WARM_LOGIN_TTL_MS / 2
+	);
+	if (fresh) return;
+	if (warmPages.length >= WARM_LOGIN_PAGES)
+		closeWarm(warmPages.shift()!.page);
+	const entry = {
+		loginUrl,
+		expires: now + WARM_LOGIN_TTL_MS,
+		page: openLoginPage(loginUrl)
+	};
+	warmPages.push(entry);
+	const drop = () => {
+		const index = warmPages.indexOf(entry);
+		if (index >= 0) warmPages.splice(index, 1);
+		return index >= 0;
+	};
+	entry.page.catch(drop);
+	setTimeout(() => {
+		if (drop()) closeWarm(entry.page);
+	}, WARM_LOGIN_TTL_MS);
+};
+
+const takeLoginPage = (loginUrl: string) => {
+	const index = warmPages.findLastIndex(entry => entry.loginUrl === loginUrl);
+	const [entry] = index >= 0 ? warmPages.splice(index, 1) : [];
+	return entry
+		? entry.page.then(
+				page => (page.isClosed() ? openLoginPage(loginUrl) : page),
+				() => openLoginPage(loginUrl)
+			)
+		: openLoginPage(loginUrl);
 };
 
 const typeInto = async (page: Page, selector: string, value: string) => {
@@ -81,21 +145,24 @@ const waitForAspen = async (page: Page, loginUrl: string) => {
 	};
 	while (!onAspen()) {
 		if (Date.now() > deadline) throw new Error(`stuck at ${page.url()}`);
-		await Bun.sleep(200);
+		await Bun.sleep(100);
 	}
-	await page
-		.waitForNetworkIdle({ idleTime: 300, timeout: SELECTOR_TIMEOUT_MS })
-		.catch(() => undefined);
 };
 
 const readSessionId = async (page: Page, loginUrl: string) => {
 	const aspenHost = new URL(loginUrl).hostname;
-	const cookies = await page.browserContext().cookies();
-	const fromCookie = cookies.find(
-		cookie => cookie.name === "JSESSIONID" && cookie.domain === aspenHost
-	)?.value;
-	const sessionId =
-		fromCookie ?? /jsessionid=([^;?&#/]+)/i.exec(page.url())?.[1];
+	const deadline = Date.now() + SELECTOR_TIMEOUT_MS;
+	const fromCookie = async () =>
+		(await page.browserContext().cookies()).find(
+			cookie =>
+				cookie.name === "JSESSIONID" && cookie.domain === aspenHost
+		)?.value;
+	let cookie = await fromCookie();
+	while (!cookie && Date.now() < deadline) {
+		await Bun.sleep(100);
+		cookie = await fromCookie();
+	}
+	const sessionId = cookie ?? /jsessionid=([^;?&#/]+)/i.exec(page.url())?.[1];
 	if (!sessionId) throw new Error("no JSESSIONID");
 	return sessionId;
 };
@@ -150,12 +217,8 @@ export const startLogin = async (
 	password: string,
 	loginUrl = ASPEN_LOGIN_URL
 ) => {
-	const context = await (await getBrowser()).createBrowserContext();
-	const page = await context.newPage();
+	const page = await takeLoginPage(loginUrl);
 	return run(page, async () => {
-		await page.setViewport(VIEWPORT);
-		page.setDefaultNavigationTimeout(NAVIGATION_TIMEOUT_MS);
-		await page.goto(loginUrl);
 		await typeInto(page, EMAIL_INPUT, username);
 		const next = await page.waitForSelector(
 			`${CAPTCHA_IMAGE}, ${PASSWORD_INPUT}`,

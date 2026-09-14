@@ -11,6 +11,8 @@ export const ASPEN_DEPLOYMENT_ID = "ma-cambridge";
 
 export const ASPEN_TIMEOUT_MS = 15_000;
 
+export const ASPEN_CONCURRENCY = 8;
+
 export const BROWSER_ARGS = ["--no-sandbox", "--disable-setuid-sandbox"];
 
 export const VIEWPORT = { width: 1280, height: 800, deviceScaleFactor: 1 };
@@ -34,6 +36,16 @@ export const LOGIN_LIMIT = 5;
 export const LOGIN_WINDOW_MS = 600_000;
 
 export const SNACKBAR_MS = 6_000;
+
+export const LOG_TIMINGS = true;
+
+export const SERVER_CACHE_MS = 60_000;
+
+export const SESSION_MEMO_MS = 600_000;
+
+export const WARM_LOGIN_PAGES = 2;
+
+export const WARM_LOGIN_TTL_MS = 120_000;
 
 export const LUNCHES = ["A", "B", "C"] as const;
 

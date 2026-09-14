@@ -29,7 +29,7 @@ import type {
 	ScheduleRow,
 	StudentData
 } from "@/lib/types";
-import { gradesPath, useApi, type ApiState } from "@/lib/useApi";
+import { clearStored, gradesPath, useApi, type ApiState } from "@/lib/useApi";
 import { Grades, type DeleteAssignment, type EditClass } from "./Grades";
 import { Recent } from "./Recent";
 import { Reports } from "./Reports";
@@ -129,7 +129,8 @@ const ThemeToggle = () => {
 
 const fromFile = <T,>(data: T | null): ApiState<T> => ({
 	data,
-	error: data ? null : "Not in file"
+	error: data ? null : "Not in file",
+	loading: false
 });
 
 const tabLabel = (option: Tab) => {
@@ -163,14 +164,41 @@ export const Home = ({
 	const undos = useRef<(() => void)[]>([]);
 	const fileInput = useRef<HTMLInputElement>(null);
 	const fromAspen = !offline && !imported;
+	const liveGrades = useApi<StudentData>(
+		fromAspen ? gradesPath(year, quarter) : null,
+		{ persist: true }
+	);
+	const gradesPending =
+		fromAspen &&
+		(liveGrades.error === "No session" ||
+			(liveGrades.error === null &&
+				(liveGrades.data === null || liveGrades.loading)));
+	const later = (name: Tab) => ({
+		persist: true,
+		wait: gradesPending && tab !== name
+	});
 	const live = {
-		grades: useApi<StudentData>(
-			fromAspen ? gradesPath(year, quarter) : null
+		grades: liveGrades,
+		recent: useApi<RecentData>(
+			fromAspen ? "/api/recent" : null,
+			later("Info")
 		),
-		recent: useApi<RecentData>(fromAspen ? "/api/recent" : null),
-		schedule: useApi<ScheduleRow[]>(fromAspen ? "/api/schedule" : null),
-		reports: useApi<Report[]>(offline ? null : "/api/reports")
+		schedule: useApi<ScheduleRow[]>(
+			fromAspen ? "/api/schedule" : null,
+			later("Schedule")
+		),
+		reports: useApi<Report[]>(
+			offline ? null : "/api/reports",
+			later("Reports")
+		)
 	};
+	const liveStates: ApiState<unknown>[] = Object.values(live);
+	const updating = liveStates.some(
+		state => state.loading && state.data !== null
+	);
+	const savedError = liveStates.find(
+		state => state.error !== null && state.data !== null
+	)?.error;
 	const file = imported?.file;
 	const grades = file
 		? fromFile(
@@ -297,8 +325,20 @@ export const Home = ({
 
 	const openExport = () => setExporting(true);
 
+	const [visited, setVisited] = useState<Tab[]>(["Grades"]);
+
+	const openTab = (next: Tab) => {
+		setTab(next);
+		setVisited(previous =>
+			previous.includes(next) ? previous : [...previous, next]
+		);
+	};
+
 	const leave = async () => {
-		if (!offline) await fetch("/api/logout").catch(() => null);
+		if (!offline) {
+			clearStored();
+			await fetch("/api/logout").catch(() => null);
+		}
 		location.assign("/");
 	};
 
@@ -496,7 +536,7 @@ export const Home = ({
 						value={tab}
 						variant="tab"
 						label={tabLabel}
-						onChange={setTab}
+						onChange={openTab}
 					/>
 					<Curve />
 				</nav>
@@ -513,7 +553,17 @@ export const Home = ({
 					</button>
 				</div>
 			</header>
+			{updating && (
+				<div
+					class="loadingBar"
+					role="progressbar"
+					aria-label="Updating"
+				/>
+			)}
 			<main class="viewport">
+				{savedError && (
+					<p class="status error">Saved data · {savedError}</p>
+				)}
 				{mode === "import" && !imported ? (
 					<button
 						type="button"
@@ -525,7 +575,7 @@ export const Home = ({
 				) : (
 					panels.map(([name, content]) => (
 						<section key={name} hidden={tab !== name}>
-							{content}
+							{visited.includes(name) && content}
 						</section>
 					))
 				)}

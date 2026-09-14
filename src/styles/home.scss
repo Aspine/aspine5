@@ -345,6 +345,37 @@ $phone: "(max-width: 699px)";
 	margin-bottom: 16px;
 }
 
+.loadingBar {
+	position: absolute;
+	z-index: 3;
+	top: calc(var(--chromeHeight) + var(--frameGap));
+	right: calc(var(--frameGap) + 10px);
+	left: calc(var(--frameGap) + 10px);
+	height: 2px;
+	overflow: hidden;
+	pointer-events: none;
+
+	&::after {
+		position: absolute;
+		inset: 0 auto 0 0;
+		width: 30%;
+		border-radius: 1px;
+		background: var(--accent);
+		content: "";
+		animation: loadingSlide 1.2s ease-in-out infinite;
+	}
+}
+
+@keyframes loadingSlide {
+	from {
+		transform: translateX(-100%);
+	}
+
+	to {
+		transform: translateX(340%);
+	}
+}
+
 .pageBottom.stageFooter {
 	z-index: 2;
 	align-items: center;
@@ -893,6 +924,43 @@ select.cellInput {
 
 	legend {
 		width: 100%;
+	}
+}
+
+.skeletonRow {
+	display: flex;
+	align-items: center;
+	height: 44px;
+	padding: 0 16px;
+	border-bottom: 1px solid var(--line);
+
+	&:last-child {
+		border-bottom: 0;
+	}
+}
+
+.skeletonLine {
+	display: block;
+	width: 72px;
+	height: 10px;
+	border-radius: 5px;
+	background: linear-gradient(
+		90deg,
+		var(--surfaceRaised) 25%,
+		var(--surfaceHover) 50%,
+		var(--surfaceRaised) 75%
+	);
+	background-size: 200% 100%;
+	animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+	from {
+		background-position: 100% 0;
+	}
+
+	to {
+		background-position: -100% 0;
 	}
 }
 

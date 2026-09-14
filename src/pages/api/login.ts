@@ -1,5 +1,12 @@
 import type { APIRoute } from "astro";
-import { continueLogin, loginAllowed, startLogin } from "@/server/login";
+import { prefetchHome } from "@/server/aspenFeatures";
+import { measured } from "@/server/aspenRequest";
+import {
+	continueLogin,
+	loginAllowed,
+	startLogin,
+	warmLogin
+} from "@/server/login";
 
 export const prerender = false;
 
@@ -13,6 +20,11 @@ const addressOf = (context: Parameters<APIRoute>[0]) => {
 	}
 };
 
+export const PUT: APIRoute = async () => {
+	warmLogin();
+	return new Response(null, { status: 204 });
+};
+
 export const POST: APIRoute = async context => {
 	const { request, cookies, url } = context;
 	try {
@@ -23,16 +35,20 @@ export const POST: APIRoute = async context => {
 				{ error: "Too many attempts" },
 				{ status: 429, headers: NO_STORE }
 			);
-		const result = loginId
-			? await continueLogin(loginId, answer!, password!)
-			: await startLogin(username!, password!);
-		if ("sessionId" in result)
+		const result = await measured("login", () =>
+			loginId
+				? continueLogin(loginId, answer!, password!)
+				: startLogin(username!, password!)
+		);
+		if ("sessionId" in result) {
+			prefetchHome(result.sessionId);
 			cookies.set("aspineSession", result.sessionId, {
 				httpOnly: true,
 				sameSite: "lax",
 				secure: url.protocol === "https:",
 				path: "/"
 			});
+		}
 		return Response.json(result, { headers: NO_STORE });
 	} catch (error) {
 		console.error("login", error instanceof Error ? error.message : error);

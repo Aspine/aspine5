@@ -1,10 +1,19 @@
 import { ArrowRight, LoaderCircle } from "lucide-preact";
 import { useEffect, useRef, useState } from "preact/hooks";
+import { WARM_LOGIN_TTL_MS } from "@/config";
 
 type LoginResponse =
 	| { sessionId: string }
 	| { loginId: string; captcha: string }
 	| { error: string };
+
+let warmedAt = -Infinity;
+
+const warmLogin = () => {
+	if (Date.now() - warmedAt < WARM_LOGIN_TTL_MS / 2) return;
+	warmedAt = Date.now();
+	void fetch("/api/login", { method: "PUT" }).catch(() => null);
+};
 
 export const LoginForm = () => {
 	const [username, setUsername] = useState("");
@@ -12,6 +21,7 @@ export const LoginForm = () => {
 	const [answer, setAnswer] = useState("");
 	const [response, setResponse] = useState<LoginResponse | null>(null);
 	const [pending, setPending] = useState(false);
+	const form = useRef<HTMLFormElement>(null);
 	const answerInput = useRef<HTMLInputElement>(null);
 
 	const captcha = response && "loginId" in response ? response : null;
@@ -19,6 +29,19 @@ export const LoginForm = () => {
 	useEffect(() => {
 		if (captcha) answerInput.current?.focus();
 	}, [captcha?.loginId]);
+
+	useEffect(() => {
+		const rewarm = () =>
+			document.visibilityState === "visible" &&
+			form.current?.contains(document.activeElement) &&
+			warmLogin();
+		document.addEventListener("visibilitychange", rewarm);
+		addEventListener("focus", rewarm);
+		return () => {
+			document.removeEventListener("visibilitychange", rewarm);
+			removeEventListener("focus", rewarm);
+		};
+	}, []);
 
 	const submit = async (event: Event) => {
 		event.preventDefault();
@@ -40,7 +63,7 @@ export const LoginForm = () => {
 	};
 
 	return (
-		<form class="loginForm" onSubmit={submit}>
+		<form ref={form} class="loginForm" onSubmit={submit}>
 			{captcha ? (
 				<>
 					<img
@@ -76,9 +99,11 @@ export const LoginForm = () => {
 							required
 							disabled={pending}
 							value={username}
-							onInput={event =>
-								setUsername(event.currentTarget.value)
-							}
+							onFocus={warmLogin}
+							onInput={event => {
+								warmLogin();
+								setUsername(event.currentTarget.value);
+							}}
 						/>
 					</label>
 					<label class="field">
@@ -90,9 +115,11 @@ export const LoginForm = () => {
 							required
 							disabled={pending}
 							value={password}
-							onInput={event =>
-								setPassword(event.currentTarget.value)
-							}
+							onFocus={warmLogin}
+							onInput={event => {
+								warmLogin();
+								setPassword(event.currentTarget.value);
+							}}
 						/>
 					</label>
 				</>

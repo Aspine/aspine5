@@ -23,6 +23,8 @@ export type Snack = {
 	action?: readonly [string, () => void];
 };
 
+const SKELETON_ROWS = [38, 26, 44, 31, 22];
+
 const cellClass = (column: Column | undefined) =>
 	column?.numeric ? "numeric" : column?.icon ? "iconCell" : undefined;
 
@@ -72,6 +74,19 @@ export const Status = ({ error }: { error: string | null }) => (
 	<p class={error ? "status error" : "status"}>{error ?? "Loading"}</p>
 );
 
+export const Skeleton = () => (
+	<div class="panel" aria-busy="true" aria-label="Loading">
+		<div class="panelBar">
+			<span class="skeletonLine" />
+		</div>
+		{SKELETON_ROWS.map(width => (
+			<div key={width} class="skeletonRow">
+				<span class="skeletonLine" style={{ width: `${width}%` }} />
+			</div>
+		))}
+	</div>
+);
+
 export const Loaded = <T,>({
 	state,
 	children
@@ -79,10 +94,12 @@ export const Loaded = <T,>({
 	state: ApiState<T>;
 	children: (data: T) => ComponentChildren;
 }) =>
-	state.data === null ? (
+	state.data !== null ? (
+		<>{children(state.data)}</>
+	) : state.error ? (
 		<Status error={state.error} />
 	) : (
-		<>{children(state.data)}</>
+		<Skeleton />
 	);
 
 export const Toggle = <T extends string>({

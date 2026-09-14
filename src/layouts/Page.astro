@@ -21,6 +21,7 @@ const { stage = false } = Astro.props;
 		<meta name="referrer" content="no-referrer" />
 		<meta name="color-scheme" content="dark light" />
 		<title>Aspine</title>
+		<slot name="head" />
 		<script is:inline>
 			(() => {
 				try {

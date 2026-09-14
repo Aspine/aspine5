@@ -1,3 +1,4 @@
+import { SERVER_CACHE_MS, SESSION_MEMO_MS } from "@/config";
 import type {
 	Assignment,
 	AssignmentStats,
@@ -32,6 +33,10 @@ type Feature = (sessionId: string, query: URLSearchParams) => Promise<Response>;
 
 type Term = { id: string; oid: string };
 
+type Stored = { status: number; contentType: string; body: ArrayBuffer };
+
+type Expiring<T> = { expires: number; value: Promise<T> };
+
 const QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
 const STRUTS_TOKEN_FIELD = "org.apache.struts.taglib.html.TOKEN";
 const STRUTS_TOKEN =
@@ -49,6 +54,31 @@ const ATTENDANCE_FLAGS = [
 	["tardy", "Tardy"],
 	["dismissed", "Dismissed"]
 ] as const;
+const HOME_FEATURES = ["recent", "schedule", "reports"];
+
+const stored = new Map<string, Expiring<Stored>>();
+const memo = new Map<string, Expiring<unknown>>();
+
+const expiring = <T>(
+	map: Map<string, Expiring<T>>,
+	key: string,
+	lifetime: number,
+	load: () => Promise<T>
+) => {
+	const now = Date.now();
+	map.forEach(
+		(entry, entryKey) => entry.expires < now && map.delete(entryKey)
+	);
+	const hit = map.get(key);
+	if (hit) return hit.value;
+	const value = load();
+	map.set(key, { expires: now + lifetime, value });
+	value.catch(() => map.delete(key));
+	return value;
+};
+
+const remember = <T>(key: string, load: () => Promise<T>) =>
+	expiring(memo, key, SESSION_MEMO_MS, load) as Promise<T>;
 
 const toAssignment = (row: Row): Assignment => {
 	const element = rows(row.scoreElements)[0] ?? {};
@@ -87,41 +117,76 @@ const byDueDate = (first: Assignment, second: Assignment) =>
 
 const grades: Feature = async (sessionId, query) => {
 	const year = query.get("year") === "previous" ? "previous" : "current";
-	const [student] = rows(await aspenJson(sessionId, "rest/users/students"));
-	if (!student) throw sessionError();
+	const student = await remember(`${sessionId} student`, async () => {
+		const [row] = rows(await aspenJson(sessionId, "rest/users/students"));
+		if (!row) throw sessionError();
+		return row;
+	});
 	const studentOid = text(student.studentOid);
-
-	const terms: Term[] = rows(
-		await aspenJson(sessionId, gradeTermsPath(studentOid, year))
-	)
-		.map(row => ({ id: text(row.gradeTermId), oid: text(row.oid) }))
-		.filter(term => QUARTERS.includes(term.id));
-
 	const readClassList = async (term: string) =>
 		rows(await aspenJson(sessionId, classListPath(studentOid, year, term)));
-	const [allClasses = [], ...termClasses] = await Promise.all([
-		readClassList("all"),
-		...terms.map(term => readClassList(term.oid))
-	]);
-	const termGrades = termClasses.map(
-		list =>
-			new Map(list.map(row => [text(row.oid), text(row.cfTermAverage)]))
-	);
-	const classRows = allClasses.filter(
-		row => row.relSscMstOid_relMstCskOid_cskGrdInpHide !== true
-	);
 
-	const currentIndex =
-		year === "current" && classRows[0]
-			? numberOf(
-					asRow(
-						await aspenJson(
-							sessionId,
-							classPath(text(classRows[0].oid), "gradeTerms")
-						)
-					).currentTermIndex
+	const termsLoad = remember(
+		`${sessionId} terms ${year}`,
+		async (): Promise<Term[]> =>
+			rows(await aspenJson(sessionId, gradeTermsPath(studentOid, year)))
+				.map(row => ({ id: text(row.gradeTermId), oid: text(row.oid) }))
+				.filter(term => QUARTERS.includes(term.id))
+	);
+	const classRowsLoad = readClassList("all").then(list =>
+		list.filter(row => row.relSscMstOid_relMstCskOid_cskGrdInpHide !== true)
+	);
+	const termGradesLoad = termsLoad
+		.then(terms => Promise.all(terms.map(term => readClassList(term.oid))))
+		.then(lists =>
+			lists.map(
+				list =>
+					new Map(
+						list.map(row => [
+							text(row.oid),
+							text(row.cfTermAverage)
+						])
+					)
+			)
+		);
+	const academicsLoad = classRowsLoad.then(classRows =>
+		Promise.all(
+			classRows.map(row =>
+				aspenJson(
+					sessionId,
+					classPath(text(row.oid), "academics")
+				).then(asRow)
+			)
+		)
+	);
+	const currentIndexLoad =
+		year === "current"
+			? classRowsLoad.then(classRows =>
+					classRows[0]
+						? remember(`${sessionId} currentTerm`, async () =>
+								numberOf(
+									asRow(
+										await aspenJson(
+											sessionId,
+											classPath(
+												text(classRows[0]!.oid),
+												"gradeTerms"
+											)
+										)
+									).currentTermIndex
+								)
+							)
+						: null
 				)
-			: null;
+			: Promise.resolve(null);
+	academicsLoad.catch(() => undefined);
+
+	const [terms, classRows, termGrades, currentIndex] = await Promise.all([
+		termsLoad,
+		classRowsLoad,
+		termGradesLoad,
+		currentIndexLoad
+	]);
 	const requestedIndex = terms.findIndex(
 		term => term.id === query.get("quarter")
 	);
@@ -130,49 +195,29 @@ const grades: Feature = async (sessionId, query) => {
 			? requestedIndex
 			: (currentIndex ?? terms.length - 1);
 	const quarter = terms[quarterIndex] ?? { id: "Q1", oid: "" };
+	const inQuarter = (oid: string) =>
+		termGrades[quarterIndex]?.has(oid) ?? false;
 
-	const readClass = async (row: Row): Promise<ClassData> => {
-		const oid = text(row.oid);
-		const inQuarter = termGrades[quarterIndex]?.has(oid) ?? false;
-		const readAssignments = async (kind: string) =>
-			inQuarter && quarter.oid
-				? rows(
-						await aspenJson(
-							sessionId,
-							`${classPath(oid, `categoryDetails/${kind}`)}?gradeTermOid=${encodeURIComponent(quarter.oid)}`
+	const readAssignments = async (oid: string) =>
+		inQuarter(oid) && quarter.oid
+			? (
+					await Promise.all(
+						["pastDue", "upcoming"].map(async kind =>
+							rows(
+								await aspenJson(
+									sessionId,
+									`${classPath(oid, `categoryDetails/${kind}`)}?gradeTermOid=${encodeURIComponent(quarter.oid)}`
+								)
+							)
 						)
 					)
-				: [];
-		const [academics, pastDue, upcoming] = await Promise.all([
-			aspenJson(sessionId, classPath(oid, "academics")).then(asRow),
-			readAssignments("pastDue"),
-			readAssignments("upcoming")
-		]);
-		return {
-			oid,
-			name: text(row.relSscMstOid_mstDescription),
-			teacher: text(rows(row.relSscMstOid_mstStaffView)[0]?.name),
-			grades: Object.fromEntries(
-				terms.map((term, index) => [
-					term.id,
-					termGrades[index]?.get(oid) ?? ""
-				])
-			),
-			inQuarter,
-			categories: rows(academics.averageSummary)
-				.filter(isCategory)
-				.map(toCategory(quarter.id)),
-			assignments: [...pastDue, ...upcoming]
-				.map(toAssignment)
-				.sort(byDueDate),
-			attendance: Object.fromEntries(
-				rows(academics.attendanceSummary).map(entry => [
-					text(entry.type).toLowerCase(),
-					numberOf(entry.total) ?? 0
-				])
-			)
-		};
-	};
+				).flat()
+			: [];
+
+	const [academics, assignments] = await Promise.all([
+		academicsLoad,
+		Promise.all(classRows.map(row => readAssignments(text(row.oid))))
+	]);
 
 	return Response.json({
 		name: text(student.name),
@@ -182,7 +227,34 @@ const grades: Feature = async (sessionId, query) => {
 		currentQuarter:
 			currentIndex === null ? null : (terms[currentIndex]?.id ?? null),
 		quarters: terms.map(term => term.id),
-		classes: await Promise.all(classRows.map(row => readClass(row)))
+		classes: classRows.map((row, index): ClassData => {
+			const oid = text(row.oid);
+			const summary = academics[index] ?? {};
+			return {
+				oid,
+				name: text(row.relSscMstOid_mstDescription),
+				teacher: text(rows(row.relSscMstOid_mstStaffView)[0]?.name),
+				grades: Object.fromEntries(
+					terms.map((term, termIndex) => [
+						term.id,
+						termGrades[termIndex]?.get(oid) ?? ""
+					])
+				),
+				inQuarter: inQuarter(oid),
+				categories: rows(summary.averageSummary)
+					.filter(isCategory)
+					.map(toCategory(quarter.id)),
+				assignments: (assignments[index] ?? [])
+					.map(toAssignment)
+					.sort(byDueDate),
+				attendance: Object.fromEntries(
+					rows(summary.attendanceSummary).map(entry => [
+						text(entry.type).toLowerCase(),
+						numberOf(entry.total) ?? 0
+					])
+				)
+			};
+		})
 	} satisfies StudentData);
 };
 
@@ -338,16 +410,73 @@ const report: Feature = async (sessionId, query) =>
 		"application/pdf"
 	);
 
+const reports: Feature = async sessionId =>
+	toResponse(await aspenFetch(sessionId, "rest/reports"));
+
+const storedKey = (sessionId: string, name: string, query: URLSearchParams) =>
+	[
+		sessionId,
+		name,
+		...[...query]
+			.filter(([, value]) => value !== "")
+			.map(pair => pair.join("="))
+			.sort()
+	].join(" ");
+
+const fromStored = ({ status, contentType, body }: Stored) =>
+	new Response(body.slice(0), {
+		status,
+		headers: { "Content-Type": contentType }
+	});
+
+const withCache =
+	(name: string, feature: Feature): Feature =>
+	async (sessionId, query) => {
+		const key = storedKey(sessionId, name, query);
+		const response = expiring(stored, key, SERVER_CACHE_MS, () =>
+			feature(sessionId, query).then(async result => ({
+				status: result.status,
+				contentType: result.headers.get("content-type") ?? "",
+				body: await result.arrayBuffer()
+			}))
+		);
+		response.then(
+			result => result.status !== 200 && stored.delete(key),
+			() => undefined
+		);
+		return fromStored(await response);
+	};
+
+const forgetSession = (sessionId: string) =>
+	[stored, memo].forEach(map =>
+		map.forEach(
+			(_, key) => key.startsWith(`${sessionId} `) && map.delete(key)
+		)
+	);
+
 const features: Record<string, Feature> = {
-	grades,
-	recent,
-	schedule,
+	grades: withCache("grades", grades),
+	recent: withCache("recent", recent),
+	schedule: withCache("schedule", schedule),
+	reports: withCache("reports", reports),
+	report: withCache("report", report),
 	stats,
-	report,
-	reports: async sessionId =>
-		toResponse(await aspenFetch(sessionId, "rest/reports")),
-	logout: async () => new Response("ok")
+	logout: async sessionId => {
+		forgetSession(sessionId);
+		return new Response("ok");
+	}
 };
+
+export const prefetchHome = (sessionId: string) =>
+	void features.grades!(sessionId, new URLSearchParams({ year: "current" }))
+		.then(() =>
+			Promise.all(
+				HOME_FEATURES.map(name =>
+					features[name]!(sessionId, new URLSearchParams())
+				)
+			)
+		)
+		.catch(() => undefined);
 
 export const getFeature = (name: string) =>
 	Object.hasOwn(features, name) ? features[name] : undefined;

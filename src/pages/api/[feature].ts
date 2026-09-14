@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { getFeature } from "@/server/aspenFeatures";
+import { measured } from "@/server/aspenRequest";
 
 export const prerender = false;
 
@@ -11,7 +12,9 @@ export const GET: APIRoute = async ({ params, url, cookies }) => {
 	if (!feature) return new Response("Unknown feature", { status: 404 });
 	if (!sessionId) return NO_SESSION();
 	try {
-		const response = await feature(sessionId, url.searchParams);
+		const response = await measured(params.feature ?? "", () =>
+			feature(sessionId, url.searchParams)
+		);
 		if (params.feature === "logout")
 			cookies.delete("aspineSession", { path: "/" });
 		switch (true) {
