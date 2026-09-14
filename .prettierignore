@@ -1,0 +1,10 @@
+node_modules/
+public/
+dist/
+.astro/
+references/
+todo.md
+*-lock.yaml
+*.lockb
+*.lock
+*-lock.json
