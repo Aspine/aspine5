@@ -1,11 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
-import {
-	BELL_SCHEDULE,
-	LUNCH_BY_FLOOR,
-	LUNCH_PERIOD,
-	LUNCHES,
-	type Lunch
-} from "@/config";
+import { BELL_SCHEDULE, LUNCH_BY_FLOOR, LUNCH_PERIOD, LUNCHES, type Lunch } from "@/config";
 import type { ScheduleRow } from "@/lib/types";
 import { Table } from "./Templates";
 
@@ -39,28 +33,16 @@ const LUNCH_KEY = "aspineLunch";
 
 const CLOCK_MS = 30_000;
 
-const COLUMNS = [
-	{ label: "Period" },
-	{ label: "Time" },
-	{ label: "Room" },
-	{ label: "Class" }
-];
+const COLUMNS = [{ label: "Period" }, { label: "Time" }, { label: "Room" }, { label: "Class" }];
 
-export const scheduleFor = (
-	rows: ScheduleRow[],
-	semester: string,
-	day: ScheduleDay
-): Entry[] =>
+export const scheduleFor = (rows: ScheduleRow[], semester: string, day: ScheduleDay): Entry[] =>
 	rows
 		.flatMap(row => {
 			if (row.term !== semester && row.term !== "FY") return [];
 			const segment = row.schedule.includes("[")
-				? (new RegExp(`\\[${semester}\\]\\s*([^\\[]+)`).exec(
-						row.schedule
-					)?.[1] ?? "")
+				? (new RegExp(`\\[${semester}\\]\\s*([^\\[]+)`).exec(row.schedule)?.[1] ?? "")
 				: row.schedule;
-			const [, period = "", days = ""] =
-				/^\s*(.+?)\((.*?)\)/.exec(segment) ?? [];
+			const [, period = "", days = ""] = /^\s*(.+?)\((.*?)\)/.exec(segment) ?? [];
 			if (!period || (day && !days.split("-").includes(day))) return [];
 			return [{ ...row, period: period.trim() }];
 		})
@@ -77,8 +59,7 @@ export const minutesOf = (time: string) => {
 };
 
 export const lunchFor = (entries: Entry[]): Lunch | null => {
-	const room =
-		entries.find(entry => periodNumber(entry) === LUNCH_PERIOD)?.room ?? "";
+	const room = entries.find(entry => periodNumber(entry) === LUNCH_PERIOD)?.room ?? "";
 	const floor = /(?:^|\D)(\d)\d{3}(?!\d)/.exec(room)?.[1];
 	return floor ? (LUNCH_BY_FLOOR[floor] ?? null) : null;
 };
@@ -134,10 +115,7 @@ export const Schedule = ({ rows }: { rows: ScheduleRow[] }) => {
 	const [choice, setChoice] = useState(readLunch);
 	const [now, setNow] = useState(() => new Date());
 	const day = DAYS[dayIndex]?.[1] ?? null;
-	const minutes =
-		now.getDay() - 1 === dayIndex
-			? now.getHours() * 60 + now.getMinutes()
-			: -1;
+	const minutes = now.getDay() - 1 === dayIndex ? now.getHours() * 60 + now.getMinutes() : -1;
 
 	useEffect(() => {
 		const timer = setInterval(() => setNow(new Date()), CLOCK_MS);
@@ -160,9 +138,7 @@ export const Schedule = ({ rows }: { rows: ScheduleRow[] }) => {
 					class="select"
 					aria-label="Day"
 					value={dayIndex}
-					onChange={event =>
-						setDayIndex(Number(event.currentTarget.value))
-					}
+					onChange={event => setDayIndex(Number(event.currentTarget.value))}
 				>
 					{DAYS.map(([label], index) => (
 						<option key={label} value={index}>
@@ -174,15 +150,11 @@ export const Schedule = ({ rows }: { rows: ScheduleRow[] }) => {
 					class="select"
 					aria-label="Lunch"
 					value={choice}
-					onChange={event =>
-						choose(event.currentTarget.value as LunchChoice)
-					}
+					onChange={event => choose(event.currentTarget.value as LunchChoice)}
 				>
 					{LUNCH_CHOICES.map(option => (
 						<option key={option} value={option}>
-							{option === "Auto"
-								? "Auto lunch"
-								: `Lunch ${option}`}
+							{option === "Auto" ? "Auto lunch" : `Lunch ${option}`}
 						</option>
 					))}
 				</select>
@@ -190,10 +162,7 @@ export const Schedule = ({ rows }: { rows: ScheduleRow[] }) => {
 			<div class="scheduleGrid">
 				{SEMESTERS.map(semester => {
 					const entries = scheduleFor(rows, semester, day);
-					const lunch =
-						choice === "Auto"
-							? (lunchFor(entries) ?? LUNCHES[0])
-							: choice;
+					const lunch = choice === "Auto" ? (lunchFor(entries) ?? LUNCHES[0]) : choice;
 					const slots = timedSchedule(entries, lunch);
 					return (
 						<div key={semester} class="panel">
@@ -205,43 +174,30 @@ export const Schedule = ({ rows }: { rows: ScheduleRow[] }) => {
 							) : (
 								<Table columns={COLUMNS}>
 									{slots.map(slot => {
-										const current =
-											slot.start <= minutes &&
-											minutes < slot.end;
+										const current = slot.start <= minutes && minutes < slot.end;
+										// this horrible piece of work formats teacher names "Last, First" to "First Last" 
+										// (sometimes there are multiple teachers and it separates them with a semicolon so even worse)
+										const teacherName = slot.entry?.teacher
+											.split("; ")
+											.map(pair => pair.split(", ").reverse().join(" "))
+											.join("; ");
 										return (
 											<tr
 												key={`${slot.name}${slot.time}`}
-												class={
-													current
-														? "currentRow"
-														: undefined
-												}
-												aria-current={
-													current ? "time" : undefined
-												}
+												class={current ? "currentRow" : undefined}
+												aria-current={current ? "time" : undefined}
 											>
 												<td>{slot.name}</td>
 												<td>{slot.time}</td>
-												<td>
-													{slot.entry?.room ?? ""}
-												</td>
+												<td>{slot.entry?.room ?? ""}</td>
 												<td>
 													{slot.entry && (
 														<>
 															{slot.entry.name}
 															<small>
-																{[
-																	slot.entry
-																		.teacher,
-																	slot.entry
-																		.course
-																]
-																	.filter(
-																		Boolean
-																	)
-																	.join(
-																		" · "
-																	)}
+																{[teacherName, slot.entry.course]
+																	.filter(Boolean)
+																	.join(" · ")}
 															</small>
 														</>
 													)}
