@@ -1,4 +1,3 @@
-import { Download } from "lucide-preact";
 import { useState } from "preact/hooks";
 import type { Report } from "@/lib/types";
 
@@ -38,11 +37,6 @@ export const Reports = ({ reports }: { reports: Report[] }) => {
 					<h2 class="panelTitle" title={selected.filename}>
 						{selected.filename}
 					</h2>
-					<div class="panelActions">
-						<a class="iconButton" href={source} download aria-label="Download" title="Download">
-							<Download size={16} aria-hidden="true" />
-						</a>
-					</div>
 				</div>
 				<iframe class="reportFrame" title="Report" src={source} />
 			</div>
