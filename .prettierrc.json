@@ -10,6 +10,7 @@
 	"requirePragma": false,
 	"insertPragma": false,
 	"proseWrap": "always",
+	"printWidth": 120,
 	"plugins": ["prettier-plugin-astro"],
 	"overrides": [
 		{
