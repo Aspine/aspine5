@@ -1,11 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import {
-	ASPEN_CONCURRENCY,
-	ASPEN_DEPLOYMENT_ID,
-	ASPEN_ORIGIN,
-	ASPEN_TIMEOUT_MS,
-	LOG_TIMINGS
-} from "@/config";
+import { ASPEN_CONCURRENCY, ASPEN_DEPLOYMENT_ID, ASPEN_ORIGIN, ASPEN_TIMEOUT_MS, LOG_TIMINGS } from "@/config";
 
 export type Row = Record<string, unknown>;
 
@@ -40,9 +34,7 @@ const meters = new AsyncLocalStorage<Meter>();
 
 const pump = (sessionId: string, lane: Lane) => {
 	for (let next = lane.waiting[0]; next; next = lane.waiting[0]) {
-		const fits = next.exclusive
-			? lane.active === 0
-			: !lane.exclusive && lane.active < ASPEN_CONCURRENCY;
+		const fits = next.exclusive ? lane.active === 0 : !lane.exclusive && lane.active < ASPEN_CONCURRENCY;
 		if (!fits) return;
 		lane.waiting.shift();
 		lane.active++;
@@ -52,11 +44,7 @@ const pump = (sessionId: string, lane: Lane) => {
 	if (lane.active === 0) lanes.delete(sessionId);
 };
 
-const inSessionLane = <T>(
-	sessionId: string,
-	exclusive: boolean,
-	task: () => Promise<T>
-) =>
+const inSessionLane = <T>(sessionId: string, exclusive: boolean, task: () => Promise<T>) =>
 	new Promise<T>((resolve, reject) => {
 		const lane = lanes.get(sessionId) ?? {
 			active: 0,
@@ -123,33 +111,18 @@ const requestOnce = (
 		}
 	});
 
-export const aspenFetch = async (
-	sessionId: string,
-	path: string,
-	form?: Record<string, string>
-) => {
+export const aspenFetch = async (sessionId: string, path: string, form?: Record<string, string>) => {
 	const meter = meters.getStore();
-	if (form || !path.startsWith("rest/"))
-		return requestOnce(sessionId, path, form, true, meter);
-	const response = await requestOnce(
-		sessionId,
-		path,
-		form,
-		false,
-		meter
-	).catch(() => null);
+	if (form || !path.startsWith("rest/")) return requestOnce(sessionId, path, form, true, meter);
+	const response = await requestOnce(sessionId, path, form, false, meter).catch(() => null);
 	if (response && response.status < 500) return response;
 	console.error(`aspen ${response?.status ?? "error"} retry alone`);
 	return requestOnce(sessionId, path, form, true, meter);
 };
 
-export const responseText = (response: AspenResponse) =>
-	new TextDecoder().decode(response.body);
+export const responseText = (response: AspenResponse) => new TextDecoder().decode(response.body);
 
-export const toResponse = (
-	response: AspenResponse,
-	contentType = response.contentType
-) =>
+export const toResponse = (response: AspenResponse, contentType = response.contentType) =>
 	new Response(response.body, {
 		status: response.status,
 		headers: { "Content-Type": contentType }
@@ -168,13 +141,9 @@ export const aspenPage = async (sessionId: string, path: string) => {
 	return html;
 };
 
-export const pageTitle = (html: string) =>
-	/<title>([^<]*)/i.exec(html)?.[1]?.trim() ?? "untitled";
+export const pageTitle = (html: string) => /<title>([^<]*)/i.exec(html)?.[1]?.trim() ?? "untitled";
 
-export const aspenJson = async (
-	sessionId: string,
-	path: string
-): Promise<unknown> => {
+export const aspenJson = async (sessionId: string, path: string): Promise<unknown> => {
 	const response = await aspenFetch(sessionId, path);
 	switch (response.status) {
 		case 200:
@@ -188,38 +157,24 @@ export const aspenJson = async (
 };
 
 export const rows = (value: unknown) =>
-	Array.isArray(value)
-		? value.filter(
-				(row): row is Row => row !== null && typeof row === "object"
-			)
-		: [];
+	Array.isArray(value) ? value.filter((row): row is Row => row !== null && typeof row === "object") : [];
 
 export const asRow = (value: unknown): Row =>
-	value !== null && typeof value === "object" && !Array.isArray(value)
-		? (value as Row)
-		: {};
+	value !== null && typeof value === "object" && !Array.isArray(value) ? (value as Row) : {};
 
 export const text = (value: unknown) =>
-	typeof value === "string"
-		? value.trim()
-		: typeof value === "number"
-			? String(value)
-			: "";
+	typeof value === "string" ? value.trim() : typeof value === "number" ? String(value) : "";
 
 export const numberOf = (value: unknown) => {
-	const parsed =
-		typeof value === "number" ? value : Number.parseFloat(text(value));
+	const parsed = typeof value === "number" ? value : Number.parseFloat(text(value));
 	return Number.isFinite(parsed) ? parsed : null;
 };
 
-export const dateOf = (value: unknown) =>
-	typeof value === "number" ? new Date(value).toISOString().slice(0, 10) : "";
+export const dateOf = (value: unknown) => (typeof value === "number" ? new Date(value).toISOString().slice(0, 10) : "");
 
 export const decodeEntities = (value: string) =>
 	value.replace(/&(#\d+|\w+);/g, (match, entity: string) =>
-		entity.startsWith("#")
-			? String.fromCharCode(Number(entity.slice(1)))
-			: (ENTITIES[entity] ?? match)
+		entity.startsWith("#") ? String.fromCharCode(Number(entity.slice(1))) : (ENTITIES[entity] ?? match)
 	);
 
 export const stripTags = (html: string) =>
@@ -227,12 +182,7 @@ export const stripTags = (html: string) =>
 		.replace(/\s+/g, " ")
 		.trim();
 
-const listQuery = (
-	studentOid: string,
-	year: string,
-	term: string,
-	fieldSet: string
-) =>
+const listQuery = (studentOid: string, year: string, term: string, fieldSet: string) =>
 	`count=50&customParams=${encodeURIComponent(`selectedYear|${year};selectedTerm|${term}`)}&selectedStudent=${encodeURIComponent(studentOid)}&fieldSetOid=${fieldSet}&filter=%23%23%23all&offset=1&sort=default&unique=true`;
 
 export const classListPath = (studentOid: string, year: string, term: string) =>

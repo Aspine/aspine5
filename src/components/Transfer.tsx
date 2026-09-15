@@ -1,10 +1,5 @@
 import { useState } from "preact/hooks";
-import type {
-	ExportFile,
-	RecentData,
-	ScheduleRow,
-	StudentData
-} from "@/lib/types";
+import type { ExportFile, RecentData, ScheduleRow, StudentData } from "@/lib/types";
 import { fetchApi, gradesPath } from "@/lib/useApi";
 import { Modal } from "./Templates";
 
@@ -12,9 +7,7 @@ const EXTRAS = ["Recent", "Schedule"] as const;
 
 const downloadJson = (name: string, value: unknown) => {
 	const link = document.createElement("a");
-	link.href = URL.createObjectURL(
-		new Blob([JSON.stringify(value, null, 2)], { type: "application/json" })
-	);
+	link.href = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], { type: "application/json" }));
 	link.download = name;
 	link.click();
 	setTimeout(() => URL.revokeObjectURL(link.href), 1000);
@@ -26,32 +19,22 @@ const isTerm = (value: unknown): value is StudentData => {
 		typeof term?.quarter === "string" &&
 		Array.isArray(term.quarters) &&
 		Array.isArray(term.classes) &&
-		term.classes.every(
-			item =>
-				Array.isArray(item?.assignments) &&
-				Array.isArray(item.categories)
-		)
+		term.classes.every(item => Array.isArray(item?.assignments) && Array.isArray(item.categories))
 	);
 };
 
 export const parseExport = (text: string): ExportFile | null => {
 	try {
 		const parsed = JSON.parse(text) as Partial<ExportFile> | null;
-		return parsed &&
-			Array.isArray(parsed.terms) &&
-			parsed.terms.length > 0 &&
-			parsed.terms.every(isTerm)
+		return parsed && Array.isArray(parsed.terms) && parsed.terms.length > 0 && parsed.terms.every(isTerm)
 			? {
 					exportedAt: String(parsed.exportedAt ?? ""),
 					terms: parsed.terms,
 					recent:
-						Array.isArray(parsed.recent?.attendance) &&
-						Array.isArray(parsed.recent.activity)
+						Array.isArray(parsed.recent?.attendance) && Array.isArray(parsed.recent.activity)
 							? parsed.recent
 							: null,
-					schedule: Array.isArray(parsed.schedule)
-						? parsed.schedule
-						: null
+					schedule: Array.isArray(parsed.schedule) ? parsed.schedule : null
 				}
 			: null;
 	} catch {
@@ -74,23 +57,13 @@ export const ExportDialog = ({
 	onClose: () => void;
 	onError: (text: string) => void;
 }) => {
-	const [picked, setPicked] = useState<string[]>([
-		current.quarter,
-		...EXTRAS
-	]);
+	const [picked, setPicked] = useState<string[]>([current.quarter, ...EXTRAS]);
 	const [busy, setBusy] = useState(false);
 
-	const termFor = (key: string) =>
-		key === current.quarter
-			? current
-			: terms?.find(term => term.quarter === key);
+	const termFor = (key: string) => (key === current.quarter ? current : terms?.find(term => term.quarter === key));
 
 	const toggle = (key: string) =>
-		setPicked(previous =>
-			previous.includes(key)
-				? previous.filter(item => item !== key)
-				: [...previous, key]
-		);
+		setPicked(previous => (previous.includes(key) ? previous.filter(item => item !== key) : [...previous, key]));
 
 	const check = (key: string, disabled: boolean) => (
 		<label key={key} class="check">
@@ -110,11 +83,7 @@ export const ExportDialog = ({
 			const exported = await Promise.all(
 				current.quarters
 					.filter(key => picked.includes(key))
-					.map(
-						key =>
-							termFor(key) ??
-							fetchApi<StudentData>(gradesPath(current.year, key))
-					)
+					.map(key => termFor(key) ?? fetchApi<StudentData>(gradesPath(current.year, key)))
 			);
 			downloadJson(`aspine-${current.year}.json`, {
 				exportedAt: new Date().toISOString(),

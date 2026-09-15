@@ -175,7 +175,7 @@ export const Schedule = ({ rows }: { rows: ScheduleRow[] }) => {
 								<Table columns={COLUMNS}>
 									{slots.map(slot => {
 										const current = slot.start <= minutes && minutes < slot.end;
-										// this horrible piece of work formats teacher names "Last, First" to "First Last" 
+										// this horrible piece of work formats teacher names "Last, First" to "First Last"
 										// (sometimes there are multiple teachers and it separates them with a semicolon so even worse)
 										const teacherName = slot.entry?.teacher
 											.split("; ")

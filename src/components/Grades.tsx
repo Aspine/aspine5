@@ -10,26 +10,13 @@ import {
 	gradeTone,
 	parseNumber
 } from "@/lib/grades";
-import type {
-	Assignment,
-	AssignmentStats,
-	Category,
-	ClassData,
-	StudentData
-} from "@/lib/types";
+import type { Assignment, AssignmentStats, Category, ClassData, StudentData } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
 import { Modal, Table } from "./Templates";
 
-export type EditClass = (
-	classOid: string,
-	change: (assignments: Assignment[]) => Assignment[]
-) => void;
+export type EditClass = (classOid: string, change: (assignments: Assignment[]) => Assignment[]) => void;
 
-export type DeleteAssignment = (
-	classOid: string,
-	assignment: Assignment,
-	index: number
-) => void;
+export type DeleteAssignment = (classOid: string, assignment: Assignment, index: number) => void;
 
 type Dialog = { kind: "corrections" | "info"; assignment: Assignment };
 
@@ -58,8 +45,7 @@ const ASSIGNMENT_COLUMNS = [
 	{ label: "", icon: true }
 ];
 
-const isAdded = (assignment: Assignment) =>
-	assignment.oid.startsWith(ADDED_PREFIX);
+const isAdded = (assignment: Assignment) => assignment.oid.startsWith(ADDED_PREFIX);
 
 const blankAssignment = (category: Category | undefined): Assignment => ({
 	oid: `${ADDED_PREFIX}${Date.now()}`,
@@ -101,13 +87,7 @@ const IconButton = ({
 	onClick: () => void;
 	children: ComponentChildren;
 }) => (
-	<button
-		type="button"
-		class="iconButton"
-		aria-label={label}
-		title={label}
-		onClick={onClick}
-	>
+	<button type="button" class="iconButton" aria-label={label} title={label} onClick={onClick}>
 		{children}
 	</button>
 );
@@ -133,9 +113,7 @@ const AssignmentRow = ({
 					class="cellInput"
 					aria-label="Assignment"
 					value={assignment.name}
-					onChange={event =>
-						onUpdate({ name: event.currentTarget.value })
-					}
+					onChange={event => onUpdate({ name: event.currentTarget.value })}
 				/>
 			</td>
 			<td>
@@ -144,9 +122,7 @@ const AssignmentRow = ({
 					aria-label="Category"
 					value={assignment.categoryOid}
 					onChange={event => {
-						const category = categories.find(
-							entry => entry.oid === event.currentTarget.value
-						);
+						const category = categories.find(entry => entry.oid === event.currentTarget.value);
 						onUpdate({
 							categoryOid: category?.oid ?? "",
 							category: category?.name ?? ""
@@ -161,11 +137,7 @@ const AssignmentRow = ({
 				</select>
 			</td>
 			<td>
-				<NumberInput
-					label="Score"
-					value={assignment.score}
-					onValue={score => onUpdate({ score })}
-				/>
+				<NumberInput label="Score" value={assignment.score} onValue={score => onUpdate({ score })} />
 			</td>
 			<td>
 				<NumberInput
@@ -175,27 +147,17 @@ const AssignmentRow = ({
 				/>
 			</td>
 			<td class="numeric">
-				<span data-tone={gradeTone(percent)}>
-					{formatPercent(percent) || assignment.special}
-				</span>
+				<span data-tone={gradeTone(percent)}>{formatPercent(percent) || assignment.special}</span>
 			</td>
 			<td class="iconCell">
 				{assignment.score !== null && (
-					<IconButton
-						label="Test corrections"
-						onClick={() =>
-							onDialog({ kind: "corrections", assignment })
-						}
-					>
+					<IconButton label="Test corrections" onClick={() => onDialog({ kind: "corrections", assignment })}>
 						<Hammer size={16} aria-hidden="true" />
 					</IconButton>
 				)}
 			</td>
 			<td class="iconCell">
-				<IconButton
-					label="Assignment info"
-					onClick={() => onDialog({ kind: "info", assignment })}
-				>
+				<IconButton label="Assignment info" onClick={() => onDialog({ kind: "info", assignment })}>
 					<Info size={16} aria-hidden="true" />
 				</IconButton>
 			</td>
@@ -222,34 +184,15 @@ const CorrectionsDialog = ({
 			class="modalForm"
 			onSubmit={event => {
 				event.preventDefault();
-				const redeemable = parseNumber(
-					String(
-						new FormData(event.currentTarget).get("redeemable") ??
-							""
-					)
-				);
-				if (
-					redeemable !== null &&
-					assignment.score !== null &&
-					assignment.maxScore !== null
-				)
-					onApply(
-						assignment.score +
-							((assignment.maxScore - assignment.score) *
-								redeemable) /
-								100
-					);
+				const redeemable = parseNumber(String(new FormData(event.currentTarget).get("redeemable") ?? ""));
+				if (redeemable !== null && assignment.score !== null && assignment.maxScore !== null)
+					onApply(assignment.score + ((assignment.maxScore - assignment.score) * redeemable) / 100);
 				onClose();
 			}}
 		>
 			<label class="field">
 				<span>Redeemable %</span>
-				<input
-					class="input"
-					name="redeemable"
-					inputmode="decimal"
-					autofocus
-				/>
+				<input class="input" name="redeemable" inputmode="decimal" autofocus />
 			</label>
 			<button type="submit" class="button primary">
 				Apply
@@ -258,18 +201,8 @@ const CorrectionsDialog = ({
 	</Modal>
 );
 
-const StatsPlot = ({
-	stats,
-	assignment
-}: {
-	stats: AssignmentStats;
-	assignment: Assignment;
-}) => {
-	const at = (value: number) =>
-		Math.min(
-			100,
-			Math.max(0, (value / (assignment.maxScore || 100)) * 100)
-		);
+const StatsPlot = ({ stats, assignment }: { stats: AssignmentStats; assignment: Assignment }) => {
+	const at = (value: number) => Math.min(100, Math.max(0, (value / (assignment.maxScore || 100)) * 100));
 	return (
 		<div class="statsPlot" aria-hidden="true">
 			<span
@@ -280,12 +213,7 @@ const StatsPlot = ({
 				}}
 			/>
 			<span class="statsMark" style={{ left: `${at(stats.median)}%` }} />
-			{assignment.score !== null && (
-				<span
-					class="statsMark score"
-					style={{ left: `${at(assignment.score)}%` }}
-				/>
-			)}
+			{assignment.score !== null && <span class="statsMark score" style={{ left: `${at(assignment.score)}%` }} />}
 		</div>
 	);
 };
@@ -326,19 +254,13 @@ const InfoDialog = ({
 			) : (
 				context &&
 				!isAdded(assignment) && (
-					<p class="muted">
-						{response.error ??
-							(response.data ? "No stats" : "Loading stats")}
-					</p>
+					<p class="muted">{response.error ?? (response.data ? "No stats" : "Loading stats")}</p>
 				)
 			)}
 			<dl class="details">
 				{[
 					...statsRows,
-					[
-						"Score",
-						`${assignment.score ?? (assignment.special || "–")} / ${assignment.maxScore ?? "–"}`
-					],
+					["Score", `${assignment.score ?? (assignment.special || "–")} / ${assignment.maxScore ?? "–"}`],
 					["Category", assignment.category || "–"],
 					["Date Assigned", assignment.assigned || "–"],
 					["Date Due", assignment.due || "–"],
@@ -373,38 +295,21 @@ const ClassDetail = ({
 	const [dialog, setDialog] = useState<Dialog | null>(null);
 	const assignments = edited ?? item.assignments;
 	const category = item.categories.find(entry => entry.oid === categoryOid);
-	const shown = category
-		? assignments.filter(
-				assignment => assignment.categoryOid === category.oid
-			)
-		: assignments;
+	const shown = category ? assignments.filter(assignment => assignment.categoryOid === category.oid) : assignments;
 
 	const update = (oid: string, patch: Partial<Assignment>) =>
 		onEdit(item.oid, list =>
-			list.map(assignment =>
-				assignment.oid === oid
-					? { ...assignment, ...patch }
-					: assignment
-			)
+			list.map(assignment => (assignment.oid === oid ? { ...assignment, ...patch } : assignment))
 		);
 
-	const add = () =>
-		onEdit(item.oid, list => [
-			blankAssignment(category ?? item.categories[0]),
-			...list
-		]);
+	const add = () => onEdit(item.oid, list => [blankAssignment(category ?? item.categories[0]), ...list]);
 
 	return (
 		<div class="panel">
 			<div class="panelBar">
 				<h2 class="panelTitle">{item.name}</h2>
-				{item.teacher && (
-					<span class="panelDetail">{item.teacher}</span>
-				)}
-				<span
-					class="panelActions panelGrade"
-					data-tone={gradeTone(grade)}
-				>
+				{item.teacher && <span class="panelDetail">{item.teacher}</span>}
+				<span class="panelActions panelGrade" data-tone={gradeTone(grade)}>
 					{formatGrade(grade) || "–"}
 				</span>
 			</div>
@@ -416,22 +321,14 @@ const ClassDetail = ({
 							key={total.oid}
 							class="clickable"
 							aria-selected={total.oid === categoryOid}
-							onClick={() =>
-								setCategoryOid(
-									total.oid === categoryOid ? null : total.oid
-								)
-							}
+							onClick={() => setCategoryOid(total.oid === categoryOid ? null : total.oid)}
 						>
 							<td>{total.name}</td>
-							<td class="numeric">
-								{Math.round(total.weight * 100)}%
-							</td>
+							<td class="numeric">{Math.round(total.weight * 100)}%</td>
 							<td class="numeric">{total.score}</td>
 							<td class="numeric">{total.maxScore}</td>
 							<td class="numeric">
-								<span data-tone={gradeTone(total.percent)}>
-									{formatPercent(total.percent)}
-								</span>
+								<span data-tone={gradeTone(total.percent)}>{formatPercent(total.percent)}</span>
 							</td>
 						</tr>
 					))}
@@ -440,11 +337,7 @@ const ClassDetail = ({
 
 			<div class="panelBar">
 				<h2 class="panelTitle">Assignments</h2>
-				<span class="panelDetail">
-					{category
-						? `${category.name} · ${shown.length}`
-						: shown.length}
-				</span>
+				<span class="panelDetail">{category ? `${category.name} · ${shown.length}` : shown.length}</span>
 				<div class="panelActions">
 					<IconButton label="Add assignment" onClick={add}>
 						<Plus size={16} aria-hidden="true" />
@@ -462,13 +355,7 @@ const ClassDetail = ({
 							assignment={assignment}
 							categories={item.categories}
 							onUpdate={patch => update(assignment.oid, patch)}
-							onRemove={() =>
-								onDelete(
-									item.oid,
-									assignment,
-									assignments.indexOf(assignment)
-								)
-							}
+							onRemove={() => onDelete(item.oid, assignment, assignments.indexOf(assignment))}
 							onDialog={setDialog}
 						/>
 					))}
@@ -483,11 +370,7 @@ const ClassDetail = ({
 				/>
 			)}
 			{dialog?.kind === "info" && (
-				<InfoDialog
-					assignment={dialog.assignment}
-					context={context}
-					onClose={() => setDialog(null)}
-				/>
+				<InfoDialog assignment={dialog.assignment} context={context} onClose={() => setDialog(null)} />
 			)}
 		</div>
 	);
@@ -538,30 +421,17 @@ export const Grades = ({
 								key={item.oid}
 								class="clickable"
 								aria-selected={item.oid === selectedOid}
-								onClick={() =>
-									setSelectedOid(
-										item.oid === selectedOid
-											? null
-											: item.oid
-									)
-								}
+								onClick={() => setSelectedOid(item.oid === selectedOid ? null : item.oid)}
 							>
 								<td class="className">{item.name}</td>
 								<td class="numeric">
 									{grade === null ? (
 										<span class="muted">–</span>
 									) : (
-										<span data-tone={gradeTone(grade)}>
-											{formatGrade(grade)}
-										</span>
+										<span data-tone={gradeTone(grade)}>{formatGrade(grade)}</span>
 									)}
 									{edited && (
-										<small>
-											Aspen{" "}
-											{formatGrade(
-												classGrade(item, data.quarter)
-											) || "–"}
-										</small>
+										<small>Aspen {formatGrade(classGrade(item, data.quarter)) || "–"}</small>
 									)}
 								</td>
 							</tr>
@@ -573,11 +443,7 @@ export const Grades = ({
 				<ClassDetail
 					key={selected.oid}
 					item={selected}
-					grade={classGrade(
-						selected,
-						data.quarter,
-						edits[selected.oid]
-					)}
+					grade={classGrade(selected, data.quarter, edits[selected.oid])}
 					context={
 						stats
 							? {

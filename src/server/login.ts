@@ -26,11 +26,9 @@ const EMAIL_INPUT = "#identifierId";
 const PASSWORD_INPUT = 'input[type="password"]:not([aria-hidden="true"])';
 const CAPTCHA_IMAGE = "#captchaimg";
 const CAPTCHA_INPUT = 'input[name="ca"]';
-const DISCONNECTED =
-	/connection closed|target closed|session closed|detached|protocol error|net::err_/i;
+const DISCONNECTED = /connection closed|target closed|session closed|detached|protocol error|net::err_/i;
 
-export type LoginResult =
-	{ sessionId: string } | { loginId: string; captcha: string };
+export type LoginResult = { sessionId: string } | { loginId: string; captcha: string };
 
 let browser: Promise<Browser> | null = null;
 const pendingCaptchas = new Map<string, { page: Page; loginUrl: string }>();
@@ -41,13 +39,10 @@ const warmPages: {
 	page: Promise<Page>;
 }[] = [];
 
-export const isDisconnect = (error: unknown) =>
-	error instanceof Error && DISCONNECTED.test(error.message);
+export const isDisconnect = (error: unknown) => error instanceof Error && DISCONNECTED.test(error.message);
 
 export const loginAllowed = (key: string, now = Date.now()) => {
-	const recent = (loginAttempts.get(key) ?? []).filter(
-		time => now - time < LOGIN_WINDOW_MS
-	);
+	const recent = (loginAttempts.get(key) ?? []).filter(time => now - time < LOGIN_WINDOW_MS);
 	const allowed = recent.length < LOGIN_LIMIT;
 	loginAttempts.set(key, allowed ? [...recent, now] : recent);
 	return allowed;
@@ -104,19 +99,12 @@ const openLoginPage = async (loginUrl: string) => {
 };
 
 const closeWarm = (page: Promise<Page>) =>
-	void page
-		.then(opened => opened.browserContext().close())
-		.catch(() => undefined);
+	void page.then(opened => opened.browserContext().close()).catch(() => undefined);
 
 export const warmLogin = (loginUrl = ASPEN_LOGIN_URL, now = Date.now()) => {
-	const fresh = warmPages.some(
-		entry =>
-			entry.loginUrl === loginUrl &&
-			entry.expires - now > WARM_LOGIN_TTL_MS / 2
-	);
+	const fresh = warmPages.some(entry => entry.loginUrl === loginUrl && entry.expires - now > WARM_LOGIN_TTL_MS / 2);
 	if (fresh) return undefined;
-	if (warmPages.length >= WARM_LOGIN_PAGES)
-		closeWarm(warmPages.shift()!.page);
+	if (warmPages.length >= WARM_LOGIN_PAGES) closeWarm(warmPages.shift()!.page);
 	const entry = {
 		loginUrl,
 		expires: now + WARM_LOGIN_TTL_MS,
@@ -161,9 +149,7 @@ const waitForAspen = async (page: Page, loginUrl: string) => {
 	const deadline = Date.now() + AFTER_PASSWORD_TIMEOUT_MS;
 	const onAspen = () => {
 		const url = new URL(page.url());
-		return (
-			url.hostname === aspenHost && !/logon|saml|sso/i.test(url.pathname)
-		);
+		return url.hostname === aspenHost && !/logon|saml|sso/i.test(url.pathname);
 	};
 	while (!onAspen()) {
 		if (Date.now() > deadline) throw new Error(`stuck at ${page.url()}`);
@@ -176,8 +162,7 @@ const readSessionId = async (page: Page, loginUrl: string) => {
 	const deadline = Date.now() + SELECTOR_TIMEOUT_MS;
 	const fromCookie = async () =>
 		(await page.browserContext().cookies()).find(
-			cookie =>
-				cookie.name === "JSESSIONID" && cookie.domain === aspenHost
+			cookie => cookie.name === "JSESSIONID" && cookie.domain === aspenHost
 		)?.value;
 	let cookie = await fromCookie();
 	while (!cookie && Date.now() < deadline) {
@@ -189,23 +174,15 @@ const readSessionId = async (page: Page, loginUrl: string) => {
 	return sessionId;
 };
 
-const submitPassword = async (
-	page: Page,
-	password: string,
-	loginUrl: string
-): Promise<LoginResult> => {
+const submitPassword = async (page: Page, password: string, loginUrl: string): Promise<LoginResult> => {
 	await typeInto(page, PASSWORD_INPUT, password);
 	await waitForAspen(page, loginUrl);
 	return { sessionId: await readSessionId(page, loginUrl) };
 };
 
-const holdCaptcha = async (
-	page: Page,
-	loginUrl: string
-): Promise<LoginResult> => {
+const holdCaptcha = async (page: Page, loginUrl: string): Promise<LoginResult> => {
 	await page.waitForFunction(
-		selector =>
-			document.querySelector<HTMLImageElement>(selector)?.complete,
+		selector => document.querySelector<HTMLImageElement>(selector)?.complete,
 		{ timeout: SELECTOR_TIMEOUT_MS },
 		CAPTCHA_IMAGE
 	);
@@ -242,52 +219,31 @@ const run = async (page: Page, steps: () => Promise<LoginResult>) => {
 	}
 };
 
-const signIn = (
-	page: Page,
-	username: string,
-	password: string,
-	loginUrl: string
-) =>
+const signIn = (page: Page, username: string, password: string, loginUrl: string) =>
 	run(page, async () => {
 		await typeInto(page, EMAIL_INPUT, username);
-		const next = await page.waitForSelector(
-			`${CAPTCHA_IMAGE}, ${PASSWORD_INPUT}`,
-			{ visible: true, timeout: AFTER_EMAIL_TIMEOUT_MS }
-		);
+		const next = await page.waitForSelector(`${CAPTCHA_IMAGE}, ${PASSWORD_INPUT}`, {
+			visible: true,
+			timeout: AFTER_EMAIL_TIMEOUT_MS
+		});
 		return (await next!.evaluate(element => element.id === "captchaimg"))
 			? holdCaptcha(page, loginUrl)
 			: submitPassword(page, password, loginUrl);
 	});
 
-export const startLogin = async (
-	username: string,
-	password: string,
-	loginUrl = ASPEN_LOGIN_URL
-) => {
+export const startLogin = async (username: string, password: string, loginUrl = ASPEN_LOGIN_URL) => {
 	const first = await takeLoginPage(loginUrl).catch(() => null);
 	try {
 		if (!first) throw new Error("connection closed");
 		return await signIn(first.page, username, password, loginUrl);
 	} catch (error) {
-		const staleWarm =
-			first?.warm === true &&
-			error instanceof Error &&
-			error.name === "TimeoutError";
+		const staleWarm = first?.warm === true && error instanceof Error && error.name === "TimeoutError";
 		if (!isDisconnect(error) && !staleWarm) throw error;
-		return signIn(
-			await openLoginPage(loginUrl),
-			username,
-			password,
-			loginUrl
-		);
+		return signIn(await openLoginPage(loginUrl), username, password, loginUrl);
 	}
 };
 
-export const continueLogin = async (
-	loginId: string,
-	answer: string,
-	password: string
-) => {
+export const continueLogin = async (loginId: string, answer: string, password: string) => {
 	const pending = pendingCaptchas.get(loginId);
 	if (!pending) throw new Error("captcha expired");
 	pendingCaptchas.delete(loginId);

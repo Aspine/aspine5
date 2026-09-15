@@ -1,11 +1,5 @@
 import { computeGrade } from "@/lib/grades"; // this file is ai generated
-import type {
-	Assignment,
-	Category,
-	ClassData,
-	ExportFile,
-	StudentData
-} from "@/lib/types";
+import type { Assignment, Category, ClassData, ExportFile, StudentData } from "@/lib/types";
 
 const QUARTERS = ["Q1", "Q2"];
 
@@ -25,8 +19,7 @@ const CATEGORIES = [
 
 const MAX_SCORES = [100, 20, 10];
 
-const date = (month: number, day: number) =>
-	`2026-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+const date = (month: number, day: number) => `2026-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
 const categoriesFor = (classIndex: number): Category[] =>
 	CATEGORIES.map(([name, weight], index) => ({
@@ -35,15 +28,11 @@ const categoriesFor = (classIndex: number): Category[] =>
 		weight
 	}));
 
-const assignmentsFor = (
-	classIndex: number,
-	quarterIndex: number
-): Assignment[] =>
+const assignmentsFor = (classIndex: number, quarterIndex: number): Assignment[] =>
 	Array.from({ length: 9 }, (_, index) => {
 		const category = categoriesFor(classIndex)[index % 3]!;
 		const maxScore = MAX_SCORES[index % 3] ?? 10;
-		const percent =
-			68 + ((classIndex * 11 + quarterIndex * 7 + index * 13) % 33);
+		const percent = 68 + ((classIndex * 11 + quarterIndex * 7 + index * 13) % 33);
 		return {
 			oid: `demo${classIndex}q${quarterIndex}a${index}`,
 			name: `${category.name} ${Math.floor(index / 3) + 1}`,
@@ -67,10 +56,7 @@ const classFor =
 		grades: Object.fromEntries(
 			QUARTERS.map((quarter, index) => [
 				quarter,
-				computeGrade(
-					categoriesFor(classIndex),
-					assignmentsFor(classIndex, index)
-				)?.toFixed(2) ?? ""
+				computeGrade(categoriesFor(classIndex), assignmentsFor(classIndex, index))?.toFixed(2) ?? ""
 			])
 		),
 		inQuarter: true,

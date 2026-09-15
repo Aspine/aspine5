@@ -25,8 +25,7 @@ export type Snack = {
 
 const SKELETON_ROWS = [38, 26, 44, 31, 22];
 
-const cellClass = (column: Column | undefined) =>
-	column?.numeric ? "numeric" : column?.icon ? "iconCell" : undefined;
+const cellClass = (column: Column | undefined) => (column?.numeric ? "numeric" : column?.icon ? "iconCell" : undefined);
 
 export const Table = ({
 	columns,
@@ -55,10 +54,7 @@ export const Table = ({
 					{rows?.map((cells, rowIndex) => (
 						<tr key={rowIndex}>
 							{cells.map((cell, cellIndex) => (
-								<td
-									key={cellIndex}
-									class={cellClass(columns[cellIndex])}
-								>
+								<td key={cellIndex} class={cellClass(columns[cellIndex])}>
 									{cell}
 								</td>
 							))}
@@ -87,20 +83,8 @@ export const Skeleton = () => (
 	</div>
 );
 
-export const Loaded = <T,>({
-	state,
-	children
-}: {
-	state: ApiState<T>;
-	children: (data: T) => ComponentChildren;
-}) =>
-	state.data !== null ? (
-		<>{children(state.data)}</>
-	) : state.error ? (
-		<Status error={state.error} />
-	) : (
-		<Skeleton />
-	);
+export const Loaded = <T,>({ state, children }: { state: ApiState<T>; children: (data: T) => ComponentChildren }) =>
+	state.data !== null ? <>{children(state.data)}</> : state.error ? <Status error={state.error} /> : <Skeleton />;
 
 export const Toggle = <T extends string>({
 	options,
@@ -128,13 +112,7 @@ export const Toggle = <T extends string>({
 	</>
 );
 
-export const Menu = ({
-	label,
-	groups
-}: {
-	label: ComponentChildren;
-	groups: readonly (readonly MenuItem[])[];
-}) => {
+export const Menu = ({ label, groups }: { label: ComponentChildren; groups: readonly (readonly MenuItem[])[] }) => {
 	const [position, setPosition] = useState<{
 		top: number;
 		right: number;
@@ -147,14 +125,9 @@ export const Menu = ({
 		const close = () => setPosition(null);
 		const closeOutside = (event: PointerEvent) => {
 			const target = event.target as Node;
-			if (
-				!popover.current?.contains(target) &&
-				!button.current?.contains(target)
-			)
-				close();
+			if (!popover.current?.contains(target) && !button.current?.contains(target)) close();
 		};
-		const closeOnEscape = (event: KeyboardEvent) =>
-			event.key === "Escape" && close();
+		const closeOnEscape = (event: KeyboardEvent) => event.key === "Escape" && close();
 		addEventListener("pointerdown", closeOutside);
 		addEventListener("keydown", closeOnEscape);
 		addEventListener("resize", close);
@@ -167,11 +140,7 @@ export const Menu = ({
 
 	const toggle = () => {
 		const rect = button.current?.getBoundingClientRect();
-		setPosition(
-			position || !rect
-				? null
-				: { top: rect.bottom + 6, right: innerWidth - rect.right }
-		);
+		setPosition(position || !rect ? null : { top: rect.bottom + 6, right: innerWidth - rect.right });
 	};
 
 	return (
@@ -214,27 +183,13 @@ export const Menu = ({
 										}}
 									>
 										<span>{item.label}</span>
-										<span class="menuDetail">
-											{item.detail}
-										</span>
-										{item.checked ? (
-											<Check
-												size={14}
-												aria-hidden="true"
-											/>
-										) : (
-											<span />
-										)}
+										<span class="menuDetail">{item.detail}</span>
+										{item.checked ? <Check size={14} aria-hidden="true" /> : <span />}
 									</button>
 								) : (
-									<div
-										key={item.label}
-										class="menuItem static"
-									>
+									<div key={item.label} class="menuItem static">
 										<span>{item.label}</span>
-										<span class="menuDetail">
-											{item.detail}
-										</span>
+										<span class="menuDetail">{item.detail}</span>
 										<span />
 									</div>
 								)
@@ -257,31 +212,17 @@ export const Modal = ({
 	children: ComponentChildren;
 }) => {
 	useEffect(() => {
-		const closeOnEscape = (event: KeyboardEvent) =>
-			event.key === "Escape" && onClose();
+		const closeOnEscape = (event: KeyboardEvent) => event.key === "Escape" && onClose();
 		addEventListener("keydown", closeOnEscape);
 		return () => removeEventListener("keydown", closeOnEscape);
 	}, [onClose]);
 
 	return (
-		<div
-			class="modalBackdrop"
-			onClick={event => event.target === event.currentTarget && onClose()}
-		>
-			<div
-				class="modal"
-				role="dialog"
-				aria-modal="true"
-				aria-label={title}
-			>
+		<div class="modalBackdrop" onClick={event => event.target === event.currentTarget && onClose()}>
+			<div class="modal" role="dialog" aria-modal="true" aria-label={title}>
 				<div class="modalHeader">
 					<h2>{title}</h2>
-					<button
-						type="button"
-						class="iconButton"
-						aria-label="Close"
-						onClick={onClose}
-					>
+					<button type="button" class="iconButton" aria-label="Close" onClick={onClose}>
 						<X size={18} aria-hidden="true" />
 					</button>
 				</div>
@@ -291,13 +232,7 @@ export const Modal = ({
 	);
 };
 
-export const Snackbar = ({
-	snack,
-	onClose
-}: {
-	snack: Snack | null;
-	onClose: () => void;
-}) => {
+export const Snackbar = ({ snack, onClose }: { snack: Snack | null; onClose: () => void }) => {
 	useEffect(() => {
 		if (!snack) return;
 		const timer = setTimeout(onClose, SNACKBAR_MS);
@@ -319,12 +254,7 @@ export const Snackbar = ({
 					{snack.action[0]}
 				</button>
 			)}
-			<button
-				type="button"
-				class="iconButton"
-				aria-label="Close"
-				onClick={onClose}
-			>
+			<button type="button" class="iconButton" aria-label="Close" onClick={onClose}>
 				<X size={16} aria-hidden="true" />
 			</button>
 		</div>
@@ -342,11 +272,7 @@ export const Footer = ({
 }) => (
 	<footer class={stage ? "pageBottom stageFooter" : "pageBottom"}>
 		{commit ? (
-			<a
-				href={`${REPO_URL}/commit/${commit}`}
-				target="_blank"
-				rel="noreferrer"
-			>
+			<a href={`${REPO_URL}/commit/${commit}`} target="_blank" rel="noreferrer">
 				#{commit.slice(0, 7)}
 			</a>
 		) : (

@@ -39,13 +39,7 @@ export const Reports = ({ reports }: { reports: Report[] }) => {
 						{selected.filename}
 					</h2>
 					<div class="panelActions">
-						<a
-							class="iconButton"
-							href={source}
-							download
-							aria-label="Download"
-							title="Download"
-						>
+						<a class="iconButton" href={source} download aria-label="Download" title="Download">
 							<Download size={16} aria-hidden="true" />
 						</a>
 					</div>

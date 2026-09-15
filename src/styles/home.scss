@@ -338,8 +338,7 @@ $phone: "(max-width: 699px)";
 
 .viewport {
 	position: absolute;
-	inset: calc(var(--chromeHeight) + var(--frameGap)) var(--frameGap)
-		calc(var(--footerHeight) + var(--tabBarHeight));
+	inset: calc(var(--chromeHeight) + var(--frameGap)) var(--frameGap) calc(var(--footerHeight) + var(--tabBarHeight));
 	z-index: 1;
 	overflow: auto;
 	padding: 16px;
@@ -416,8 +415,7 @@ $phone: "(max-width: 699px)";
 .select {
 	padding-right: 32px;
 	border: 1px solid var(--frame);
-	background: transparent var(--chevron) no-repeat right 10px center / 14px
-		14px;
+	background: transparent var(--chevron) no-repeat right 10px center / 14px 14px;
 	color: var(--textMuted);
 	font: inherit;
 	font-size: 0.8125rem;
@@ -1040,12 +1038,7 @@ select.cellInput {
 	width: 72px;
 	height: 10px;
 	border-radius: 5px;
-	background: linear-gradient(
-		90deg,
-		var(--surfaceRaised) 25%,
-		var(--surfaceHover) 50%,
-		var(--surfaceRaised) 75%
-	);
+	background: linear-gradient(90deg, var(--surfaceRaised) 25%, var(--surfaceHover) 50%, var(--surfaceRaised) 75%);
 	background-size: 200% 100%;
 	animation: shimmer 1.4s ease-in-out infinite;
 }

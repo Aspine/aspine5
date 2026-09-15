@@ -2,10 +2,7 @@ import { ArrowRight, LoaderCircle } from "lucide-preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { WARM_LOGIN_TTL_MS } from "@/config";
 
-type LoginResponse =
-	| { sessionId: string }
-	| { loginId: string; captcha: string }
-	| { error: string };
+type LoginResponse = { sessionId: string } | { loginId: string; captcha: string } | { error: string };
 
 let warmedAt = -Infinity;
 
@@ -32,9 +29,7 @@ export const LoginForm = () => {
 
 	useEffect(() => {
 		const rewarm = () =>
-			document.visibilityState === "visible" &&
-			form.current?.contains(document.activeElement) &&
-			warmLogin();
+			document.visibilityState === "visible" && form.current?.contains(document.activeElement) && warmLogin();
 		document.addEventListener("visibilitychange", rewarm);
 		addEventListener("focus", rewarm);
 		return () => {
@@ -46,9 +41,7 @@ export const LoginForm = () => {
 	const submit = async (event: Event) => {
 		event.preventDefault();
 		setPending(true);
-		const body = captcha
-			? { loginId: captcha.loginId, answer, password }
-			: { username, password };
+		const body = captcha ? { loginId: captcha.loginId, answer, password } : { username, password };
 		const result = await fetch("/api/login", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -66,11 +59,7 @@ export const LoginForm = () => {
 		<form ref={form} class="loginForm" onSubmit={submit}>
 			{captcha ? (
 				<>
-					<img
-						class="captchaImage"
-						src={captcha.captcha}
-						alt="Captcha"
-					/>
+					<img class="captchaImage" src={captcha.captcha} alt="Captcha" />
 					<label class="field">
 						<span>Captcha</span>
 						<input
@@ -82,9 +71,7 @@ export const LoginForm = () => {
 							required
 							disabled={pending}
 							value={answer}
-							onInput={event =>
-								setAnswer(event.currentTarget.value)
-							}
+							onInput={event => setAnswer(event.currentTarget.value)}
 						/>
 					</label>
 				</>
@@ -130,22 +117,12 @@ export const LoginForm = () => {
 				</p>
 			)}
 			<button class="button primary" type="submit" disabled={pending}>
-				{pending && (
-					<LoaderCircle
-						class="spinner"
-						size={18}
-						aria-hidden="true"
-					/>
-				)}
+				{pending && <LoaderCircle class="spinner" size={18} aria-hidden="true" />}
 				{captcha ? "Continue" : "Sign in"}
 				{!pending && <ArrowRight size={18} aria-hidden="true" />}
 			</button>
 			{captcha && !pending && (
-				<button
-					class="button ghost"
-					type="button"
-					onClick={() => setResponse(null)}
-				>
+				<button class="button ghost" type="button" onClick={() => setResponse(null)}>
 					Back
 				</button>
 			)}

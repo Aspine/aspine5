@@ -22,27 +22,13 @@ import {
 	type Gpa,
 	type GpaKey
 } from "@/lib/grades";
-import type {
-	Assignment,
-	ExportFile,
-	RecentData,
-	Report,
-	ScheduleRow,
-	StudentData
-} from "@/lib/types";
+import type { Assignment, ExportFile, RecentData, Report, ScheduleRow, StudentData } from "@/lib/types";
 import { clearStored, gradesPath, useApi, type ApiState } from "@/lib/useApi";
 import { Grades, type DeleteAssignment, type EditClass } from "./Grades";
 import { Recent } from "./Recent";
 import { Reports } from "./Reports";
 import { Schedule } from "./Schedule";
-import {
-	Footer,
-	Loaded,
-	Menu,
-	Snackbar,
-	Toggle,
-	type Snack
-} from "./Templates";
+import { Footer, Loaded, Menu, Snackbar, Toggle, type Snack } from "./Templates";
 import { ExportDialog, parseExport } from "./Transfer";
 
 export const MODES = ["home", "demo", "import"] as const;
@@ -77,22 +63,14 @@ type Imported = { label: string; file: ExportFile };
 const DEMO: Imported = { label: "Demo", file: DEMO_FILE };
 
 const Curve = () => (
-	<svg
-		class="curve"
-		viewBox="0 0 69.09 42"
-		preserveAspectRatio="none"
-		aria-hidden="true"
-	>
+	<svg class="curve" viewBox="0 0 69.09 42" preserveAspectRatio="none" aria-hidden="true">
 		<path d="M0 0H69.09C26.15 0 41.26 42 0 42Z" fill="currentColor" />
 	</svg>
 );
 
 const readTheme = (): Theme => {
 	const chosen = document.documentElement.dataset.theme;
-	return chosen === "light" ||
-		(!chosen && matchMedia("(prefers-color-scheme: light)").matches)
-		? "light"
-		: "dark";
+	return chosen === "light" || (!chosen && matchMedia("(prefers-color-scheme: light)").matches) ? "light" : "dark";
 };
 
 const ThemeToggle = () => {
@@ -112,18 +90,8 @@ const ThemeToggle = () => {
 	};
 
 	return (
-		<button
-			type="button"
-			class="chromeIcon"
-			aria-label="Toggle theme"
-			title="Theme"
-			onClick={toggle}
-		>
-			{theme === "light" ? (
-				<Moon size={19} aria-hidden="true" />
-			) : (
-				<Sun size={19} aria-hidden="true" />
-			)}
+		<button type="button" class="chromeIcon" aria-label="Toggle theme" title="Theme" onClick={toggle}>
+			{theme === "light" ? <Moon size={19} aria-hidden="true" /> : <Sun size={19} aria-hidden="true" />}
 		</button>
 	);
 };
@@ -144,69 +112,42 @@ const tabLabel = (option: Tab) => {
 	);
 };
 
-export const Home = ({
-	mode,
-	commit
-}: {
-	mode: Mode;
-	commit: string | null;
-}) => {
+export const Home = ({ mode, commit }: { mode: Mode; commit: string | null }) => {
 	const offline = mode !== "home";
 	const [tab, setTab] = useState<Tab>("Grades");
 	const [year, setYear] = useState<Year>("current");
 	const [quarter, setQuarter] = useState("");
 	const [gpaKey, setGpaKey] = useState<GpaKey>("percent");
 	const [edits, setEdits] = useState<Record<string, Assignment[]>>({});
-	const [imported, setImported] = useState<Imported | null>(
-		mode === "demo" ? DEMO : null
-	);
+	const [imported, setImported] = useState<Imported | null>(mode === "demo" ? DEMO : null);
 	const [exporting, setExporting] = useState(false);
 	const [snack, setSnack] = useState<Snack | null>(null);
 	const undos = useRef<(() => void)[]>([]);
 	const fileInput = useRef<HTMLInputElement>(null);
 	const fromAspen = !offline && !imported;
-	const liveGrades = useApi<StudentData>(
-		fromAspen ? gradesPath(year, quarter) : null,
-		{ persist: true }
-	);
+	const liveGrades = useApi<StudentData>(fromAspen ? gradesPath(year, quarter) : null, { persist: true });
 	const gradesPending =
 		fromAspen &&
 		(liveGrades.error === "No session" ||
-			(liveGrades.error === null &&
-				(liveGrades.data === null || liveGrades.loading)));
+			(liveGrades.error === null && (liveGrades.data === null || liveGrades.loading)));
 	const later = (name: Tab) => ({
 		persist: true,
 		wait: gradesPending && tab !== name
 	});
 	const live = {
 		grades: liveGrades,
-		recent: useApi<RecentData>(
-			fromAspen ? "/api/recent" : null,
-			later("Info")
-		),
-		schedule: useApi<ScheduleRow[]>(
-			fromAspen ? "/api/schedule" : null,
-			later("Schedule")
-		),
-		reports: useApi<Report[]>(
-			offline ? null : "/api/reports",
-			later("Reports")
-		)
+		recent: useApi<RecentData>(fromAspen ? "/api/recent" : null, later("Info")),
+		schedule: useApi<ScheduleRow[]>(fromAspen ? "/api/schedule" : null, later("Schedule")),
+		reports: useApi<Report[]>(offline ? null : "/api/reports", later("Reports"))
 	};
 	const liveStates: ApiState<unknown>[] = Object.values(live);
-	const updating = liveStates.some(
-		state => state.loading && state.data !== null
-	);
-	const savedError = liveStates.find(
-		state => state.error !== null && state.data !== null
-	)?.error;
+	const updating = liveStates.some(state => state.loading && state.data !== null);
+	const savedError = liveStates.find(state => state.error !== null && state.data !== null)?.error;
 	const file = imported?.file;
 	const grades = file
 		? fromFile(
 				file.terms.find(term => term.quarter === quarter) ??
-					file.terms.find(
-						term => term.quarter === term.currentQuarter
-					) ??
+					file.terms.find(term => term.quarter === term.currentQuarter) ??
 					file.terms[0] ??
 					null
 			)
@@ -226,9 +167,7 @@ export const Home = ({
 
 	useEffect(() => {
 		const undoKey = (event: KeyboardEvent) => {
-			const typing =
-				event.target instanceof HTMLInputElement ||
-				event.target instanceof HTMLSelectElement;
+			const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement;
 			if (
 				(event.ctrlKey || event.metaKey) &&
 				!event.shiftKey &&
@@ -258,40 +197,23 @@ export const Home = ({
 			}))
 		);
 
-	const formatGpa = (gpa: Gpa | null) =>
-		gpa === null ? "–" : gpa[gpaKey].toFixed(2);
+	const formatGpa = (gpa: Gpa | null) => (gpa === null ? "–" : gpa[gpaKey].toFixed(2));
 
 	const editClass: EditClass = (classOid, change) =>
 		setEdits(previous => {
-			const original =
-				data?.classes.find(item => item.oid === classOid)
-					?.assignments ?? [];
+			const original = data?.classes.find(item => item.oid === classOid)?.assignments ?? [];
 			const next = change(previous[classOid] ?? original);
-			const others = Object.fromEntries(
-				Object.entries(previous).filter(([key]) => key !== classOid)
-			);
-			return sameAssignments(next, original)
-				? others
-				: { ...others, [classOid]: next };
+			const others = Object.fromEntries(Object.entries(previous).filter(([key]) => key !== classOid));
+			return sameAssignments(next, original) ? others : { ...others, [classOid]: next };
 		});
 
-	const deleteAssignment: DeleteAssignment = (
-		classOid,
-		assignment,
-		index
-	) => {
-		editClass(classOid, list =>
-			list.filter(item => item.oid !== assignment.oid)
-		);
+	const deleteAssignment: DeleteAssignment = (classOid, assignment, index) => {
+		editClass(classOid, list => list.filter(item => item.oid !== assignment.oid));
 		undos.current.push(() =>
 			editClass(classOid, list =>
 				list.some(item => item.oid === assignment.oid)
 					? list
-					: [
-							...list.slice(0, index),
-							assignment,
-							...list.slice(index)
-						]
+					: [...list.slice(0, index), assignment, ...list.slice(index)]
 			)
 		);
 		notify(`Deleted ${assignment.name}`, ["Undo", undo]);
@@ -333,9 +255,7 @@ export const Home = ({
 
 	const openTab = (next: Tab) => {
 		setTab(next);
-		setVisited(previous =>
-			previous.includes(next) ? previous : [...previous, next]
-		);
+		setVisited(previous => (previous.includes(next) ? previous : [...previous, next]));
 	};
 
 	const leave = async () => {
@@ -362,26 +282,9 @@ export const Home = ({
 				)}
 			</Loaded>
 		],
-		[
-			"Schedule",
-			<Loaded state={schedule}>
-				{loaded => <Schedule rows={loaded} />}
-			</Loaded>
-		],
-		[
-			"Info",
-			<Loaded state={recent}>
-				{loaded => (
-					<Recent recent={loaded} classes={data?.classes ?? []} />
-				)}
-			</Loaded>
-		],
-		[
-			"Reports",
-			<Loaded state={reports}>
-				{loaded => <Reports reports={loaded} />}
-			</Loaded>
-		]
+		["Schedule", <Loaded state={schedule}>{loaded => <Schedule rows={loaded} />}</Loaded>],
+		["Info", <Loaded state={recent}>{loaded => <Recent recent={loaded} classes={data?.classes ?? []} />}</Loaded>],
+		["Reports", <Loaded state={reports}>{loaded => <Reports reports={loaded} />}</Loaded>]
 	];
 
 	return (
@@ -395,18 +298,10 @@ export const Home = ({
 					<Menu
 						label={
 							<>
-								<CalendarDays
-									size={16}
-									class="menuIcon"
-									aria-hidden="true"
-								/>
+								<CalendarDays size={16} class="menuIcon" aria-hidden="true" />
 								<span class="menuText">
 									{imported?.label ??
-										(offline
-											? "Import"
-											: year === "current"
-												? "Current Year"
-												: "Previous Year")}
+										(offline ? "Import" : year === "current" ? "Current Year" : "Previous Year")}
 								</span>
 							</>
 						}
@@ -418,20 +313,14 @@ export const Home = ({
 											{
 												label: "Current Year",
 												detail: "",
-												checked:
-													!imported &&
-													year === "current",
-												onSelect: () =>
-													selectYear("current")
+												checked: !imported && year === "current",
+												onSelect: () => selectYear("current")
 											},
 											{
 												label: "Previous Year",
 												detail: "",
-												checked:
-													!imported &&
-													year === "previous",
-												onSelect: () =>
-													selectYear("previous")
+												checked: !imported && year === "previous",
+												onSelect: () => selectYear("previous")
 											}
 										]
 									]),
@@ -480,33 +369,20 @@ export const Home = ({
 							data
 								? [
 										data.quarters.map(key => ({
-											label:
-												key === data.currentQuarter
-													? `${key} (current)`
-													: key,
+											label: key === data.currentQuarter ? `${key} (current)` : key,
 											detail: formatGpa(gpaFor(key)),
 											checked: key === data.quarter,
-											...(file &&
-											!file.terms.some(
-												term => term.quarter === key
-											)
+											...(file && !file.terms.some(term => term.quarter === key)
 												? {}
 												: {
-														onSelect: () =>
-															selectQuarter(key)
+														onSelect: () => selectQuarter(key)
 													})
 										})),
 										[
 											{
 												label: "Cumulative",
 												detail: formatGpa(
-													averageGpa(
-														data.quarters.flatMap(
-															key =>
-																gpaFor(key) ??
-																[]
-														)
-													)
+													averageGpa(data.quarters.flatMap(key => gpaFor(key) ?? []))
 												),
 												checked: false
 											}
@@ -535,12 +411,7 @@ export const Home = ({
 					<Curve />
 				</div>
 				<nav class="chromeSection" data-layer="2" aria-label="Tabs">
-					<Toggle
-						options={TABS}
-						value={tab}
-						label={tabLabel}
-						onChange={openTab}
-					/>
+					<Toggle options={TABS} value={tab} label={tabLabel} onChange={openTab} />
 					<Curve />
 				</nav>
 				<div class="chromeSection" data-layer="3">
@@ -556,23 +427,11 @@ export const Home = ({
 					</button>
 				</div>
 			</header>
-			{updating && (
-				<div
-					class="loadingBar"
-					role="progressbar"
-					aria-label="Updating"
-				/>
-			)}
+			{updating && <div class="loadingBar" role="progressbar" aria-label="Updating" />}
 			<main class="viewport">
-				{savedError && (
-					<p class="status error">Saved data · {savedError}</p>
-				)}
+				{savedError && <p class="status error">Saved data · {savedError}</p>}
 				{mode === "import" && !imported ? (
-					<button
-						type="button"
-						class="button primary"
-						onClick={openImport}
-					>
+					<button type="button" class="button primary" onClick={openImport}>
 						Import Data
 					</button>
 				) : (

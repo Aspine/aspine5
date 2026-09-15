@@ -2,8 +2,7 @@
 	display: grid;
 	place-items: center;
 	min-height: 100dvh;
-	padding: calc(4rem + env(safe-area-inset-top)) 1rem
-		calc(4rem + env(safe-area-inset-bottom));
+	padding: calc(4rem + env(safe-area-inset-top)) 1rem calc(4rem + env(safe-area-inset-bottom));
 }
 
 .loginPanel {

@@ -7,12 +7,7 @@ const VIEWS = ["Totals", "Attendance", "Recent Activity"] as const;
 
 type View = (typeof VIEWS)[number];
 
-const ATTENDANCE_COLUMNS = [
-	{ label: "Date" },
-	{ label: "Class" },
-	{ label: "Period" },
-	{ label: "Event" }
-];
+const ATTENDANCE_COLUMNS = [{ label: "Date" }, { label: "Class" }, { label: "Period" }, { label: "Event" }];
 
 const ACTIVITY_COLUMNS = [
 	{ label: "Date" },
@@ -28,36 +23,20 @@ const TOTAL_COLUMNS = [
 	{ label: "Dismissed", numeric: true }
 ];
 
-export const Recent = ({
-	recent,
-	classes
-}: {
-	recent: RecentData;
-	classes: ClassData[];
-}) => {
+export const Recent = ({ recent, classes }: { recent: RecentData; classes: ClassData[] }) => {
 	const [view, setView] = useState<View>("Totals");
 
 	const tables: Record<View, ComponentChildren> = {
 		Attendance: (
 			<Table
 				columns={ATTENDANCE_COLUMNS}
-				rows={recent.attendance.map(entry => [
-					entry.date,
-					entry.classname,
-					entry.period,
-					entry.event
-				])}
+				rows={recent.attendance.map(entry => [entry.date, entry.classname, entry.period, entry.event])}
 			/>
 		),
 		"Recent Activity": (
 			<Table
 				columns={ACTIVITY_COLUMNS}
-				rows={recent.activity.map(entry => [
-					entry.date,
-					entry.classname,
-					entry.assignment,
-					entry.score
-				])}
+				rows={recent.activity.map(entry => [entry.date, entry.classname, entry.assignment, entry.score])}
 			/>
 		),
 		Totals: (

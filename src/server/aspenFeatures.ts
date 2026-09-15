@@ -39,8 +39,7 @@ type Expiring<T> = { expires: number; value: Promise<T> };
 
 const QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
 const STRUTS_TOKEN_FIELD = "org.apache.struts.taglib.html.TOKEN";
-const STRUTS_TOKEN =
-	/name="org\.apache\.struts\.taglib\.html\.TOKEN" value="([^"]+)"/;
+const STRUTS_TOKEN = /name="org\.apache\.struts\.taglib\.html\.TOKEN" value="([^"]+)"/;
 const RECENT_PATH = `studentRecentActivityWidget.do?${new URLSearchParams({
 	preferences:
 		'<?xml version="1.0" encoding="UTF-8"?><preference-set><pref id="dateRange" type="int">4</pref></preference-set>'
@@ -59,16 +58,9 @@ const HOME_FEATURES = ["recent", "schedule", "reports"];
 const stored = new Map<string, Expiring<Stored>>();
 const memo = new Map<string, Expiring<unknown>>();
 
-const expiring = <T>(
-	map: Map<string, Expiring<T>>,
-	key: string,
-	lifetime: number,
-	load: () => Promise<T>
-) => {
+const expiring = <T>(map: Map<string, Expiring<T>>, key: string, lifetime: number, load: () => Promise<T>) => {
 	const now = Date.now();
-	map.forEach(
-		(entry, entryKey) => entry.expires < now && map.delete(entryKey)
-	);
+	map.forEach((entry, entryKey) => entry.expires < now && map.delete(entryKey));
 	const hit = map.get(key);
 	if (hit) return hit.value;
 	const value = load();
@@ -77,13 +69,11 @@ const expiring = <T>(
 	return value;
 };
 
-const remember = <T>(key: string, load: () => Promise<T>) =>
-	expiring(memo, key, SESSION_MEMO_MS, load) as Promise<T>;
+const remember = <T>(key: string, load: () => Promise<T>) => expiring(memo, key, SESSION_MEMO_MS, load) as Promise<T>;
 
 const toAssignment = (row: Row): Assignment => {
 	const element = rows(row.scoreElements)[0] ?? {};
-	const special =
-		element.specialCode === true ? text(element.gradebookScore) : "";
+	const special = element.specialCode === true ? text(element.gradebookScore) : "";
 	return {
 		oid: text(row.oid),
 		name: text(row.name),
@@ -98,8 +88,7 @@ const toAssignment = (row: Row): Assignment => {
 	};
 };
 
-const isCategory = (row: Row) =>
-	text(row.categoryOid) !== "" && text(row.category) !== "Gradebook average";
+const isCategory = (row: Row) => text(row.categoryOid) !== "" && text(row.category) !== "Gradebook average";
 
 const toCategory =
 	(quarter: string) =>
@@ -107,13 +96,11 @@ const toCategory =
 		oid: text(row.categoryOid),
 		name: text(row.category),
 		weight:
-			([quarter, ...QUARTERS]
-				.map(key => numberOf(row[`percentage${key}`]))
-				.find(weight => weight !== null) ?? 0) / 100
+			([quarter, ...QUARTERS].map(key => numberOf(row[`percentage${key}`])).find(weight => weight !== null) ??
+				0) / 100
 	});
 
-const byDueDate = (first: Assignment, second: Assignment) =>
-	second.due.localeCompare(first.due);
+const byDueDate = (first: Assignment, second: Assignment) => second.due.localeCompare(first.due);
 
 const grades: Feature = async (sessionId, query) => {
 	const year = query.get("year") === "previous" ? "previous" : "current";
@@ -126,38 +113,19 @@ const grades: Feature = async (sessionId, query) => {
 	const readClassList = async (term: string) =>
 		rows(await aspenJson(sessionId, classListPath(studentOid, year, term)));
 
-	const termsLoad = remember(
-		`${sessionId} terms ${year}`,
-		async (): Promise<Term[]> =>
-			rows(await aspenJson(sessionId, gradeTermsPath(studentOid, year)))
-				.map(row => ({ id: text(row.gradeTermId), oid: text(row.oid) }))
-				.filter(term => QUARTERS.includes(term.id))
+	const termsLoad = remember(`${sessionId} terms ${year}`, async (): Promise<Term[]> =>
+		rows(await aspenJson(sessionId, gradeTermsPath(studentOid, year)))
+			.map(row => ({ id: text(row.gradeTermId), oid: text(row.oid) }))
+			.filter(term => QUARTERS.includes(term.id))
 	);
 	const classRowsLoad = readClassList("all").then(list =>
 		list.filter(row => row.relSscMstOid_relMstCskOid_cskGrdInpHide !== true)
 	);
 	const termGradesLoad = termsLoad
 		.then(terms => Promise.all(terms.map(term => readClassList(term.oid))))
-		.then(lists =>
-			lists.map(
-				list =>
-					new Map(
-						list.map(row => [
-							text(row.oid),
-							text(row.cfTermAverage)
-						])
-					)
-			)
-		);
+		.then(lists => lists.map(list => new Map(list.map(row => [text(row.oid), text(row.cfTermAverage)]))));
 	const academicsLoad = classRowsLoad.then(classRows =>
-		Promise.all(
-			classRows.map(row =>
-				aspenJson(
-					sessionId,
-					classPath(text(row.oid), "academics")
-				).then(asRow)
-			)
-		)
+		Promise.all(classRows.map(row => aspenJson(sessionId, classPath(text(row.oid), "academics")).then(asRow)))
 	);
 	const currentIndexLoad =
 		year === "current"
@@ -165,15 +133,8 @@ const grades: Feature = async (sessionId, query) => {
 					classRows[0]
 						? remember(`${sessionId} currentTerm`, async () =>
 								numberOf(
-									asRow(
-										await aspenJson(
-											sessionId,
-											classPath(
-												text(classRows[0]!.oid),
-												"gradeTerms"
-											)
-										)
-									).currentTermIndex
+									asRow(await aspenJson(sessionId, classPath(text(classRows[0]!.oid), "gradeTerms")))
+										.currentTermIndex
 								)
 							)
 						: null
@@ -187,16 +148,10 @@ const grades: Feature = async (sessionId, query) => {
 		termGradesLoad,
 		currentIndexLoad
 	]);
-	const requestedIndex = terms.findIndex(
-		term => term.id === query.get("quarter")
-	);
-	const quarterIndex =
-		requestedIndex >= 0
-			? requestedIndex
-			: (currentIndex ?? terms.length - 1);
+	const requestedIndex = terms.findIndex(term => term.id === query.get("quarter"));
+	const quarterIndex = requestedIndex >= 0 ? requestedIndex : (currentIndex ?? terms.length - 1);
 	const quarter = terms[quarterIndex] ?? { id: "Q1", oid: "" };
-	const inQuarter = (oid: string) =>
-		termGrades[quarterIndex]?.has(oid) ?? false;
+	const inQuarter = (oid: string) => termGrades[quarterIndex]?.has(oid) ?? false;
 
 	const readAssignments = async (oid: string) =>
 		inQuarter(oid) && quarter.oid
@@ -224,8 +179,7 @@ const grades: Feature = async (sessionId, query) => {
 		year,
 		quarter: quarter.id,
 		quarterOid: quarter.oid,
-		currentQuarter:
-			currentIndex === null ? null : (terms[currentIndex]?.id ?? null),
+		currentQuarter: currentIndex === null ? null : (terms[currentIndex]?.id ?? null),
 		quarters: terms.map(term => term.id),
 		classes: classRows.map((row, index): ClassData => {
 			const oid = text(row.oid);
@@ -235,18 +189,11 @@ const grades: Feature = async (sessionId, query) => {
 				name: text(row.relSscMstOid_mstDescription),
 				teacher: text(rows(row.relSscMstOid_mstStaffView)[0]?.name),
 				grades: Object.fromEntries(
-					terms.map((term, termIndex) => [
-						term.id,
-						termGrades[termIndex]?.get(oid) ?? ""
-					])
+					terms.map((term, termIndex) => [term.id, termGrades[termIndex]?.get(oid) ?? ""])
 				),
 				inQuarter: inQuarter(oid),
-				categories: rows(summary.averageSummary)
-					.filter(isCategory)
-					.map(toCategory(quarter.id)),
-				assignments: (assignments[index] ?? [])
-					.map(toAssignment)
-					.sort(byDueDate),
+				categories: rows(summary.averageSummary).filter(isCategory).map(toCategory(quarter.id)),
+				assignments: (assignments[index] ?? []).map(toAssignment).sort(byDueDate),
 				attendance: Object.fromEntries(
 					rows(summary.attendanceSummary).map(entry => [
 						text(entry.type).toLowerCase(),
@@ -262,19 +209,14 @@ const xmlElements = (xml: string, tag: string) =>
 	[...xml.matchAll(new RegExp(`<${tag}\\s([^>]*)`, "g"))].map(
 		match =>
 			Object.fromEntries(
-				[...(match[1] ?? "").matchAll(/(\w+)="([^"]*)"/g)].map(
-					attribute => [
-						attribute[1] ?? "",
-						decodeEntities(attribute[2] ?? "")
-					]
-				)
+				[...(match[1] ?? "").matchAll(/(\w+)="([^"]*)"/g)].map(attribute => [
+					attribute[1] ?? "",
+					decodeEntities(attribute[2] ?? "")
+				])
 			) as Record<string, string | undefined>
 	);
 
-const schedulePage = async (
-	sessionId: string,
-	retries = 1
-): Promise<string> => {
+const schedulePage = async (sessionId: string, retries = 1): Promise<string> => {
 	const html = await aspenPage(sessionId, SCHEDULE_PATH);
 	if (html.includes("Current schedule")) return html;
 	if (retries > 0) return schedulePage(sessionId, retries - 1);
@@ -307,31 +249,19 @@ const recent: Feature = async sessionId => {
 const schedule: Feature = async sessionId => {
 	const html = await schedulePage(sessionId);
 	const tableRows = [...html.matchAll(LIST_ROW)].map(match =>
-		[...(match[1] ?? "").matchAll(LIST_CELL)].map(cell =>
-			stripTags(cell[1] ?? "")
-		)
+		[...(match[1] ?? "").matchAll(LIST_CELL)].map(cell => stripTags(cell[1] ?? ""))
 	);
 	return Response.json(
 		tableRows
 			.filter(cells => cells.length >= 7)
-			.map(
-				([
-					,
-					course = "",
-					name = "",
-					term = "",
-					scheduleCode = "",
-					room = "",
-					teacher = ""
-				]) => ({
-					course,
-					name,
-					term,
-					schedule: scheduleCode,
-					room,
-					teacher
-				})
-			) satisfies ScheduleRow[]
+			.map(([, course = "", name = "", term = "", scheduleCode = "", room = "", teacher = ""]) => ({
+				course,
+				name,
+				term,
+				schedule: scheduleCode,
+				room,
+				teacher
+			})) satisfies ScheduleRow[]
 	);
 };
 
@@ -355,10 +285,7 @@ const parseStats = (html: string): AssignmentStats | null => {
 		})
 	) as Partial<AssignmentStats>;
 	const { high, low, median, mean } = values;
-	return high === undefined ||
-		low === undefined ||
-		median === undefined ||
-		mean === undefined
+	return high === undefined || low === undefined || median === undefined || mean === undefined
 		? null
 		: { high, low, median, mean };
 };
@@ -366,13 +293,7 @@ const parseStats = (html: string): AssignmentStats | null => {
 const stats: Feature = async (sessionId, query) => {
 	let token = "";
 	const step = async (path: string, form?: Record<string, string>) => {
-		const html = responseText(
-			await aspenFetch(
-				sessionId,
-				path,
-				form && { [STRUTS_TOKEN_FIELD]: token, ...form }
-			)
-		);
+		const html = responseText(await aspenFetch(sessionId, path, form && { [STRUTS_TOKEN_FIELD]: token, ...form }));
 		token = STRUTS_TOKEN.exec(html)?.[1] ?? token;
 		return html;
 	};
@@ -403,15 +324,11 @@ const stats: Feature = async (sessionId, query) => {
 
 const report: Feature = async (sessionId, query) =>
 	toResponse(
-		await aspenFetch(
-			sessionId,
-			`rest/reports/${encodeURIComponent(query.get("id") ?? "")}/file`
-		),
+		await aspenFetch(sessionId, `rest/reports/${encodeURIComponent(query.get("id") ?? "")}/file`),
 		"application/pdf"
 	);
 
-const reports: Feature = async sessionId =>
-	toResponse(await aspenFetch(sessionId, "rest/reports"));
+const reports: Feature = async sessionId => toResponse(await aspenFetch(sessionId, "rest/reports"));
 
 const storedKey = (sessionId: string, name: string, query: URLSearchParams) =>
 	[
@@ -448,11 +365,7 @@ const withCache =
 	};
 
 const forgetSession = (sessionId: string) =>
-	[stored, memo].forEach(map =>
-		map.forEach(
-			(_, key) => key.startsWith(`${sessionId} `) && map.delete(key)
-		)
-	);
+	[stored, memo].forEach(map => map.forEach((_, key) => key.startsWith(`${sessionId} `) && map.delete(key)));
 
 const features: Record<string, Feature> = {
 	grades: withCache("grades", grades),
@@ -469,14 +382,7 @@ const features: Record<string, Feature> = {
 
 export const prefetchHome = (sessionId: string) =>
 	void features.grades!(sessionId, new URLSearchParams({ year: "current" }))
-		.then(() =>
-			Promise.all(
-				HOME_FEATURES.map(name =>
-					features[name]!(sessionId, new URLSearchParams())
-				)
-			)
-		)
+		.then(() => Promise.all(HOME_FEATURES.map(name => features[name]!(sessionId, new URLSearchParams()))))
 		.catch(() => undefined);
 
-export const getFeature = (name: string) =>
-	Object.hasOwn(features, name) ? features[name] : undefined;
+export const getFeature = (name: string) => (Object.hasOwn(features, name) ? features[name] : undefined);

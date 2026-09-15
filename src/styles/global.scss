@@ -25,14 +25,7 @@
 	--gradeC: #dcb45f;
 	--gradeD: #e6955e;
 	--gradeF: #ea7c78;
-	--rainbow: linear-gradient(
-		60deg,
-		#ff6b6b,
-		#ffb347,
-		#6fcf97,
-		#6fa8ff,
-		#c792ea
-	);
+	--rainbow: linear-gradient(60deg, #ff6b6b, #ffb347, #6fcf97, #6fa8ff, #c792ea);
 	color-scheme: dark;
 }
 
@@ -63,14 +56,7 @@
 	--gradeC: #9a6a07;
 	--gradeD: #b0521d;
 	--gradeF: #c23a33;
-	--rainbow: linear-gradient(
-		60deg,
-		#d93b33,
-		#d97706,
-		#1f7a45,
-		#2563eb,
-		#7c3aed
-	);
+	--rainbow: linear-gradient(60deg, #d93b33, #d97706, #1f7a45, #2563eb, #7c3aed);
 	color-scheme: light;
 }
 
@@ -79,8 +65,8 @@
 	--radius: 10px;
 	--radiusLg: 14px;
 	--fontSans:
-		ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-		Roboto, "Helvetica Neue", Arial, sans-serif;
+		ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+		sans-serif;
 	--fontMono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 	--ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 	--fast: 120ms;
