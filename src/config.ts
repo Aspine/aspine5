@@ -87,7 +87,4 @@ export const BELL_SCHEDULE = {
 		["Lunch", "1:05", "1:35"],
 		["4", "1:40", "3:00"]
 	]
-} as const satisfies Record<
-	Lunch,
-	readonly (readonly [string, string, string])[]
->;
+} as const satisfies Record<Lunch, readonly (readonly [string, string, string])[]>;

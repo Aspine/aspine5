@@ -12,8 +12,7 @@ const STORE_PREFIX = "aspineData:";
 
 const cache = new Map<string, unknown>();
 
-export const gradesPath = (year: string, quarter: string) =>
-	`/api/grades?${new URLSearchParams({ year, quarter })}`;
+export const gradesPath = (year: string, quarter: string) => `/api/grades?${new URLSearchParams({ year, quarter })}`;
 
 const readStored = <T>(path: string) => {
 	try {
@@ -64,14 +63,9 @@ export const fetchApi = async <T>(path: string) => {
 };
 
 const messageOf = (error: unknown) =>
-	error instanceof Error && !(error instanceof TypeError)
-		? error.message
-		: "Network error";
+	error instanceof Error && !(error instanceof TypeError) ? error.message : "Network error";
 
-export const useApi = <T>(
-	path: string | null,
-	{ persist = false, wait = false }: Options = {}
-) => {
+export const useApi = <T>(path: string | null, { persist = false, wait = false }: Options = {}) => {
 	const [state, setState] = useState<ApiState<T>>({
 		data: path ? ((cache.get(path) as T | undefined) ?? null) : null,
 		error: null,
@@ -81,8 +75,7 @@ export const useApi = <T>(
 	useEffect(() => {
 		if (!path) return setState({ data: null, error: null, loading: false });
 		const cached = cache.get(path) as T | undefined;
-		if (cached)
-			return setState({ data: cached, error: null, loading: false });
+		if (cached) return setState({ data: cached, error: null, loading: false });
 		setState({
 			data: persist ? readStored<T>(path) : null,
 			error: null,

@@ -12,11 +12,8 @@ export const GET: APIRoute = async ({ params, url, cookies }) => {
 	if (!feature) return new Response("Unknown feature", { status: 404 });
 	if (!sessionId) return NO_SESSION();
 	try {
-		const response = await measured(params.feature ?? "", () =>
-			feature(sessionId, url.searchParams)
-		);
-		if (params.feature === "logout")
-			cookies.delete("aspineSession", { path: "/" });
+		const response = await measured(params.feature ?? "", () => feature(sessionId, url.searchParams));
+		if (params.feature === "logout") cookies.delete("aspineSession", { path: "/" });
 		switch (true) {
 			case response.status === 401 || response.status === 403:
 				return NO_SESSION();
@@ -25,8 +22,7 @@ export const GET: APIRoute = async ({ params, url, cookies }) => {
 					status: 502
 				});
 		}
-		const contentType =
-			response.headers.get("content-type") ?? "text/plain";
+		const contentType = response.headers.get("content-type") ?? "text/plain";
 		return new Response(response.body, {
 			headers: {
 				"Content-Type": contentType,

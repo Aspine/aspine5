@@ -25,8 +25,7 @@ const { stage = false } = Astro.props;
 			(() => {
 				try {
 					const theme = localStorage.getItem("aspineTheme");
-					if (theme === "light" || theme === "dark")
-						document.documentElement.dataset.theme = theme;
+					if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
 				} catch {}
 			})();
 		</script>

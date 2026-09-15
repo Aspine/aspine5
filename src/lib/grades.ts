@@ -35,8 +35,7 @@ const GPA_POINTS: readonly (readonly [number, number])[] = [
 	[60, 0.7]
 ];
 
-const sum = (values: number[]) =>
-	values.reduce((total, value) => total + value, 0);
+const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
 
 const averageOf = (values: number[]) => sum(values) / values.length;
 
@@ -48,11 +47,9 @@ export const parseNumber = (value: string) => {
 	return Number.isFinite(parsed) ? parsed : null;
 };
 
-export const formatPercent = (percent: number | null) =>
-	percent === null ? "" : `${percent.toFixed(2)}%`;
+export const formatPercent = (percent: number | null) => (percent === null ? "" : `${percent.toFixed(2)}%`);
 
-export const letterGrade = (percent: number) =>
-	LETTERS.find(([minimum]) => percent >= minimum)?.[1] ?? "F";
+export const letterGrade = (percent: number) => LETTERS.find(([minimum]) => percent >= minimum)?.[1] ?? "F";
 
 export const gradeTone = (percent: number | null) => {
 	if (percent === null) return undefined;
@@ -64,9 +61,7 @@ export const formatGrade = (percent: number | null) =>
 	percent === null ? "" : `${percent.toFixed(2)} ${letterGrade(percent)}`;
 
 export const assignmentPercent = (assignment: Assignment) =>
-	assignment.score !== null && assignment.maxScore
-		? (assignment.score / assignment.maxScore) * 100
-		: null;
+	assignment.score !== null && assignment.maxScore ? (assignment.score / assignment.maxScore) * 100 : null;
 
 const scored = (assignments: Assignment[]) =>
 	assignments.filter(
@@ -89,79 +84,46 @@ const pointsPercent = (assignments: Assignment[]) => {
 	};
 };
 
-export const categoryTotals = (
-	categories: Category[],
-	assignments: Assignment[]
-) =>
+export const categoryTotals = (categories: Category[], assignments: Assignment[]) =>
 	categories.map(category => ({
 		...category,
-		...pointsPercent(
-			assignments.filter(
-				assignment => assignment.categoryOid === category.oid
-			)
-		)
+		...pointsPercent(assignments.filter(assignment => assignment.categoryOid === category.oid))
 	}));
 
-export const computeGrade = (
-	categories: Category[],
-	assignments: Assignment[]
-) => {
+export const computeGrade = (categories: Category[], assignments: Assignment[]) => {
 	if (categories.length === 0) return pointsPercent(assignments).percent;
 	const graded = categoryTotals(categories, assignments).flatMap(total =>
-		total.percent === null
-			? []
-			: [{ weight: total.weight, percent: total.percent }]
+		total.percent === null ? [] : [{ weight: total.weight, percent: total.percent }]
 	);
 	const weight = sum(graded.map(total => total.weight));
-	return weight > 0
-		? sum(graded.map(total => total.percent * total.weight)) / weight
-		: null;
+	return weight > 0 ? sum(graded.map(total => total.percent * total.weight)) / weight : null;
 };
 
-export const classGrade = (
-	item: ClassData,
-	quarter: string,
-	edited?: Assignment[]
-) => {
+export const classGrade = (item: ClassData, quarter: string, edited?: Assignment[]) => {
 	const aspen = parseNumber(item.grades[quarter] ?? "");
-	if (!edited)
-		return aspen ?? computeGrade(item.categories, item.assignments);
+	if (!edited) return aspen ?? computeGrade(item.categories, item.assignments);
 	const baseline = computeGrade(item.categories, item.assignments);
 	const current = computeGrade(item.categories, edited);
-	return aspen === null || baseline === null || current === null
-		? (current ?? aspen)
-		: aspen + current - baseline;
+	return aspen === null || baseline === null || current === null ? (current ?? aspen) : aspen + current - baseline;
 };
 
-const gpaPoints = (percent: number) =>
-	GPA_POINTS.find(([minimum]) => percent >= minimum)?.[1] ?? 0;
+const gpaPoints = (percent: number) => GPA_POINTS.find(([minimum]) => percent >= minimum)?.[1] ?? 0;
 
-const weightBonus = (name: string) =>
-	/\bAP\b/.test(name) ? 1 : /\bHN\b/.test(name) ? 0.5 : 0;
+const weightBonus = (name: string) => (/\bAP\b/.test(name) ? 1 : /\bHN\b/.test(name) ? 0.5 : 0);
 
-export const computeGpa = (
-	entries: { name: string; percent: number | null }[]
-): Gpa | null => {
+export const computeGpa = (entries: { name: string; percent: number | null }[]): Gpa | null => {
 	const graded = entries.flatMap(entry =>
-		entry.percent === null
-			? []
-			: [{ name: entry.name, percent: entry.percent }]
+		entry.percent === null ? [] : [{ name: entry.name, percent: entry.percent }]
 	);
 	if (graded.length === 0) return null;
 	return {
 		percent: averageOf(graded.map(entry => Math.min(entry.percent, 100))),
 		unweighted: averageOf(graded.map(entry => gpaPoints(entry.percent))),
-		weighted: averageOf(
-			graded.map(
-				entry => gpaPoints(entry.percent) + weightBonus(entry.name)
-			)
-		)
+		weighted: averageOf(graded.map(entry => gpaPoints(entry.percent) + weightBonus(entry.name)))
 	};
 };
 
 export const averageGpa = (gpas: Gpa[]) =>
 	gpas.length === 0
 		? null
-		: (Object.fromEntries(
-				GPA_KEYS.map(key => [key, averageOf(gpas.map(gpa => gpa[key]))])
-			) as Gpa);
+		: (Object.fromEntries(GPA_KEYS.map(key => [key, averageOf(gpas.map(gpa => gpa[key]))])) as Gpa);
