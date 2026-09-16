@@ -21,7 +21,8 @@ export const LoginForm = () => {
 	const form = useRef<HTMLFormElement>(null);
 	const answerInput = useRef<HTMLInputElement>(null);
 
-	const captcha = response && "loginId" in response ? response : null;
+	// If the response is a captcha, store it (else null)
+	const captcha = (response) && ("loginId" in response) ? response : null;
 
 	useEffect(() => {
 		if (captcha) answerInput.current?.focus();
@@ -118,7 +119,8 @@ export const LoginForm = () => {
 			)}
 			<button class="button primary" type="submit" disabled={pending}>
 				{pending && <LoaderCircle class="spinner" size={18} aria-hidden="true" />}
-				{captcha ? "Continue" : "Sign in"}
+				{/** Signing in if button pressed, Continue if captcha, Sign in if normal */}
+				{pending ? "Signing in..." : (captcha ? "Continue" : "Sign in")} 
 				{!pending && <ArrowRight size={18} aria-hidden="true" />}
 			</button>
 			{captcha && !pending && (
