@@ -138,7 +138,7 @@ export const aspenPage = async (sessionId: string, path: string) => {
 		/<title>[^<]*not(?:&nbsp;|\s)+logged(?:&nbsp;|\s)+on/i.test(html)
 	)
 		throw sessionError();
-	return html;
+	return { html, url: response.url };
 };
 
 export const pageTitle = (html: string) => /<title>([^<]*)/i.exec(html)?.[1]?.trim() ?? "untitled";

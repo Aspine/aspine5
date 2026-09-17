@@ -13,7 +13,7 @@ export const ASPEN_TIMEOUT_MS = 15_000;
 
 export const ASPEN_CONCURRENCY = 8;
 
-export const BROWSER_ARGS = ["--no-sandbox", "--disable-setuid-sandbox"];
+export const BROWSER_ARGS = ["--no-sandbox", "--disable-setuid-sandbox", "--no-startup-window"];
 
 export const VIEWPORT = { width: 1280, height: 800, deviceScaleFactor: 1 };
 

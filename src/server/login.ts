@@ -57,7 +57,8 @@ const getBrowser = async (): Promise<Browser> => {
 	const next: Promise<Browser> = (
 		puppeteer.launch({
 			headless: HEADLESS,
-			args: BROWSER_ARGS
+			args: BROWSER_ARGS,
+			waitForInitialPage: false
 		}) as unknown as Promise<Browser>
 	).then(
 		launched => {
