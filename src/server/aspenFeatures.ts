@@ -45,6 +45,8 @@ const RECENT_PATH = `studentRecentActivityWidget.do?${new URLSearchParams({
 		'<?xml version="1.0" encoding="UTF-8"?><preference-set><pref id="dateRange" type="int">4</pref></preference-set>'
 })}`;
 const SCHEDULE_PATH = "studentScheduleContextList.do?navkey=myInfo.sch.list";
+const MATRIX_PAGE = "studentScheduleMatrix.do";
+const LIST_VIEW_PATH = "studentScheduleMatrix.do?navkey=myInfo.sch.matrix&userEvent=360";
 const LIST_ROW = /<tr[^>]*class="listCell[^"]*"[^>]*>([\s\S]*?)<\/tr>/gi;
 const LIST_CELL = /<td[^>]*>([\s\S]*?)<\/td>/gi;
 const ATTENDANCE_FLAGS = [
@@ -217,14 +219,15 @@ const xmlElements = (xml: string, tag: string) =>
 	);
 
 const schedulePage = async (sessionId: string, retries = 1): Promise<string> => {
-	const html = await aspenPage(sessionId, SCHEDULE_PATH);
+	const page = await aspenPage(sessionId, SCHEDULE_PATH);
+	const { html } = page.url.includes(MATRIX_PAGE) ? await aspenPage(sessionId, LIST_VIEW_PATH) : page;
 	if (html.includes("Current schedule")) return html;
 	if (retries > 0) return schedulePage(sessionId, retries - 1);
 	throw new Error(`schedule page ${pageTitle(html)}`);
 };
 
 const recent: Feature = async sessionId => {
-	const xml = await aspenPage(sessionId, RECENT_PATH);
+	const { html: xml } = await aspenPage(sessionId, RECENT_PATH);
 	if (/<html/i.test(xml)) throw new Error(`recent page ${pageTitle(xml)}`);
 	return Response.json({
 		attendance: xmlElements(xml, "periodAttendance").map(entry => ({
