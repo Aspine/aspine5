@@ -153,6 +153,15 @@ const waitForAspen = async (page: Page, loginUrl: string) => {
 		return url.hostname === aspenHost && !/logon|saml|sso/i.test(url.pathname);
 	};
 	while (!onAspen()) {
+		const url = new URL(page.url());
+	
+		if (
+		    url.hostname === "accounts.google.com" &&
+		    /\/signin\/rejected(?:\/|$)/.test(url.pathname)
+		) {
+		    throw new Error("Google rejected this sign-in");
+		}
+
 		if (Date.now() > deadline) throw new Error(`stuck at ${page.url()}`);
 		await Bun.sleep(100);
 	}
