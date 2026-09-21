@@ -56,13 +56,17 @@
 	gap: 1.5rem;
 	font-size: 0.875rem;
 
-	a {
+	a, p {
 		color: var(--textMuted);
 		text-decoration: none;
 
 		&:hover {
 			color: var(--text);
 		}
+	}
+
+	& #divider {
+		color: var(--textMuted);
 	}
 }
 

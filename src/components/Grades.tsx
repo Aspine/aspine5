@@ -337,7 +337,7 @@ const ClassDetail = ({
 
 			<div class="panelBar">
 				<h2 class="panelTitle">Assignments</h2>
-				<span class="panelDetail">{category ? `${category.name} · ${shown.length}` : shown.length}</span>
+				<span class="panelDetail">{category ? `${category.name} - ${shown.length}` : shown.length}</span>
 				<div class="panelActions">
 					<IconButton label="Add assignment" onClick={add}>
 						<Plus size={16} aria-hidden="true" />

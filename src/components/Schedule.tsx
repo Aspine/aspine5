@@ -197,7 +197,7 @@ export const Schedule = ({ rows }: { rows: ScheduleRow[] }) => {
 															<small>
 																{[teacherName, slot.entry.course]
 																	.filter(Boolean)
-																	.join(" · ")}
+																	.join(" - ")}
 															</small>
 														</>
 													)}
