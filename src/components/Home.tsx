@@ -291,7 +291,8 @@ export const Home = ({ mode, commit }: { mode: Mode; commit: string | null }) =>
 		<div class="home">
 			<header class="chrome">
 				<div class="chromeSection" data-layer="0">
-					<span class="brand">aspine v5</span>
+					{/** Aspine title in top left */}
+					<div class="brand main-title">Aspine</div>
 					<Curve />
 				</div>
 				<div class="chromeSection" data-layer="1">
@@ -358,7 +359,7 @@ export const Home = ({ mode, commit }: { mode: Mode; commit: string | null }) =>
 						label={
 							data ? (
 								<span>
-									<span class="menuQuarter">{`${data.quarter} · `}</span>
+									<span class="menuQuarter">{`${data.quarter}`} <span id="divider">-</span></span>
 									{formatGpa(gpaFor(data.quarter))}
 								</span>
 							) : (
@@ -429,7 +430,7 @@ export const Home = ({ mode, commit }: { mode: Mode; commit: string | null }) =>
 			</header>
 			{updating && <div class="loadingBar" role="progressbar" aria-label="Updating" />}
 			<main class="viewport">
-				{savedError && <p class="status error">Saved data · {savedError}</p>}
+				{savedError && <p class="status error">Saved data <span id="divider">-</span> {savedError}</p>}
 				{mode === "import" && !imported ? (
 					<button type="button" class="button primary" onClick={openImport}>
 						Import Data

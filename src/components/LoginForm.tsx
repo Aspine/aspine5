@@ -118,10 +118,11 @@ export const LoginForm = () => {
 				</p>
 			)}
 			<button class="button primary" type="submit" disabled={pending}>
-				{pending && <LoaderCircle class="spinner" size={18} aria-hidden="true" />}
 				{/** Signing in if button pressed, Continue if captcha, Sign in if normal */}
 				{pending ? "Signing in..." : (captcha ? "Continue" : "Sign in")} 
+				{pending && <LoaderCircle class="spinner" size={18} aria-hidden="true" />}
 				{!pending && <ArrowRight size={18} aria-hidden="true" />}
+				
 			</button>
 			{captcha && !pending && (
 				<button class="button ghost" type="button" onClick={() => setResponse(null)}>

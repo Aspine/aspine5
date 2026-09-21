@@ -74,7 +74,7 @@ export const measured = async <T>(label: string, task: () => Promise<T>) => {
 		return await meters.run(meter, task);
 	} finally {
 		console.log(
-			`${label} ${Math.round(performance.now() - startedAt)}ms · aspen ${meter.requests} req ${Math.round(meter.aspenMs)}ms`
+			`${label} ${Math.round(performance.now() - startedAt)}ms - aspen ${meter.requests} req ${Math.round(meter.aspenMs)}ms`
 		);
 	}
 };

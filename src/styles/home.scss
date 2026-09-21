@@ -193,6 +193,13 @@ $phone: "(max-width: 699px)";
 	svg {
 		color: var(--textFaint);
 	}
+
+	& .menuQuarter #divider {
+		color: var(--textFaint);
+		&::after {
+			content: " ";
+		}
+	}
 }
 
 .chrome .tab {
@@ -490,6 +497,13 @@ $phone: "(max-width: 699px)";
 	&.error {
 		color: var(--danger);
 	}
+	
+	& .menuQuarter #divider {
+		color: var(--textFaint);
+		&::after {
+			content: " ";
+		}
+	}
 }
 
 .muted {
@@ -566,9 +580,15 @@ $phone: "(max-width: 699px)";
 
 .panelDetail {
 	color: var(--textMuted);
-	font-size: 0.8125rem;
+	font-size: 0.875rem;
 	font-variant-numeric: tabular-nums;
+
+	& #divider {
+		color: #f00;
+	}
 }
+
+
 
 .panelActions {
 	display: flex;
@@ -1062,4 +1082,10 @@ select.cellInput {
 	input {
 		accent-color: var(--accent);
 	}
+}
+
+.main-title {
+	font-size: 1.5rem;
+	text-align: center;
+	color: var(--accent);
 }
