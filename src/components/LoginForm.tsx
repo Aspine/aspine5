@@ -127,8 +127,8 @@ export const LoginForm = () => {
 			)}
 			<SignInButton
 				pending={pending}
-				label={captcha ? "  Continue  " : "  Sign in  "}
-				busyLabel={captcha ? "  Continuing...  " : "  Signing in...  "}
+				label={captcha ? "Continue" : "Sign in"}
+				busyLabel={captcha ? "Continuing...  " : "Signing in...  "}
 			/>
 			{pending && waited >= 7 && (
 				<p class="loginWait" role="status">
