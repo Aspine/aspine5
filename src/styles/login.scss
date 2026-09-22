@@ -56,7 +56,8 @@
 	gap: 1.5rem;
 	font-size: 0.875rem;
 
-	a, p {
+	a,
+	p {
 		color: var(--textMuted);
 		text-decoration: none;
 
@@ -70,12 +71,32 @@
 	}
 }
 
-.spinner {
-	animation: spin 0.8s linear infinite;
+.signIn {
+	padding: 0;
+
+	&:disabled {
+		opacity: 1;
+		cursor: default;
+	}
 }
 
-@keyframes spin {
-	to {
-		transform: rotate(360deg);
+.signInStage {
+	position: relative;
+	width: 192px;
+	height: 56px;
+
+	svg {
+		position: absolute;
+		inset: 0;
+		width: 192px;
+		height: 56px;
+	}
+
+	> span {
+		position: absolute;
+		top: 50%;
+		translate: 0 -50%;
+		line-height: 1;
+		white-space: pre;
 	}
 }

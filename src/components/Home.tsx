@@ -1,14 +1,4 @@
-import {
-	CalendarClock,
-	CalendarDays,
-	FileText,
-	GraduationCap,
-	Info,
-	LogOut,
-	Moon,
-	Sun,
-	type LucideIcon
-} from "lucide-preact";
+import { CalendarClock, CalendarDays, FileText, GraduationCap, Info, LogOut, type LucideIcon } from "lucide-preact";
 import type { ComponentChildren } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { DEMO_FILE } from "@/lib/demo";
@@ -50,11 +40,7 @@ const GPA_LABELS: Record<GpaKey, string> = {
 	weighted: "Weighted"
 };
 
-const THEME_KEY = "aspineTheme";
-
 type Tab = (typeof TABS)[number];
-
-type Theme = "light" | "dark";
 
 type Year = StudentData["year"];
 
@@ -67,34 +53,6 @@ const Curve = () => (
 		<path d="M0 0H69.09C26.15 0 41.26 42 0 42Z" fill="currentColor" />
 	</svg>
 );
-
-const readTheme = (): Theme => {
-	const chosen = document.documentElement.dataset.theme;
-	return chosen === "light" || (!chosen && matchMedia("(prefers-color-scheme: light)").matches) ? "light" : "dark";
-};
-
-const ThemeToggle = () => {
-	const [theme, setTheme] = useState<Theme>("dark");
-
-	useEffect(() => setTheme(readTheme()), []);
-
-	const toggle = () => {
-		const next = theme === "light" ? "dark" : "light";
-		document.documentElement.dataset.theme = next;
-		setTheme(next);
-		try {
-			localStorage.setItem(THEME_KEY, next);
-		} catch {
-			return;
-		}
-	};
-
-	return (
-		<button type="button" class="chromeIcon" aria-label="Toggle theme" title="Theme" onClick={toggle}>
-			{theme === "light" ? <Moon size={19} aria-hidden="true" /> : <Sun size={19} aria-hidden="true" />}
-		</button>
-	);
-};
 
 const fromFile = <T,>(data: T | null): ApiState<T> => ({
 	data,
@@ -359,7 +317,9 @@ export const Home = ({ mode, commit }: { mode: Mode; commit: string | null }) =>
 						label={
 							data ? (
 								<span>
-									<span class="menuQuarter">{`${data.quarter}`} <span id="divider">-</span></span>
+									<span class="menuQuarter">
+										{`${data.quarter}`} <span id="divider">-</span>
+									</span>
 									{formatGpa(gpaFor(data.quarter))}
 								</span>
 							) : (
@@ -416,7 +376,6 @@ export const Home = ({ mode, commit }: { mode: Mode; commit: string | null }) =>
 					<Curve />
 				</nav>
 				<div class="chromeSection" data-layer="3">
-					<ThemeToggle />
 					<button
 						type="button"
 						class="chromeIcon"
@@ -430,7 +389,11 @@ export const Home = ({ mode, commit }: { mode: Mode; commit: string | null }) =>
 			</header>
 			{updating && <div class="loadingBar" role="progressbar" aria-label="Updating" />}
 			<main class="viewport">
-				{savedError && <p class="status error">Saved data <span id="divider">-</span> {savedError}</p>}
+				{savedError && (
+					<p class="status error">
+						Saved data <span id="divider">-</span> {savedError}
+					</p>
+				)}
 				{mode === "import" && !imported ? (
 					<button type="button" class="button primary" onClick={openImport}>
 						Import Data

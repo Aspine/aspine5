@@ -1,6 +1,6 @@
-import { ArrowRight, LoaderCircle } from "lucide-preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { WARM_LOGIN_TTL_MS } from "@/config";
+import { SignInButton } from "./SignInButton";
 
 type LoginResponse = { sessionId: string } | { loginId: string; captcha: string } | { error: string };
 
@@ -22,7 +22,7 @@ export const LoginForm = () => {
 	const answerInput = useRef<HTMLInputElement>(null);
 
 	// If the response is a captcha, store it (else null)
-	const captcha = (response) && ("loginId" in response) ? response : null;
+	const captcha = response && "loginId" in response ? response : null;
 
 	useEffect(() => {
 		if (captcha) answerInput.current?.focus();
@@ -117,13 +117,11 @@ export const LoginForm = () => {
 					{response.error}
 				</p>
 			)}
-			<button class="button primary" type="submit" disabled={pending}>
-				{/** Signing in if button pressed, Continue if captcha, Sign in if normal */}
-				{pending ? "Signing in..." : (captcha ? "Continue" : "Sign in")} 
-				{pending && <LoaderCircle class="spinner" size={18} aria-hidden="true" />}
-				{!pending && <ArrowRight size={18} aria-hidden="true" />}
-				
-			</button>
+			<SignInButton
+				pending={pending}
+				label={captcha ? "Continue" : "Sign in"}
+				busyLabel={captcha ? "Continuing..." : "Signing in..."}
+			/>
 			{captcha && !pending && (
 				<button class="button ghost" type="button" onClick={() => setResponse(null)}>
 					Back

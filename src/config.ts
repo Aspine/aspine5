@@ -31,10 +31,6 @@ export const AFTER_CLICK_MS = 500;
 
 export const CAPTCHA_TTL_MS = 180_000;
 
-export const LOGIN_LIMIT = 5;
-
-export const LOGIN_WINDOW_MS = 600_000;
-
 export const SNACKBAR_MS = 6_000;
 
 export const LOG_TIMINGS = true;

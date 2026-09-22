@@ -1,19 +1,11 @@
 import type { APIRoute } from "astro";
 import { prefetchHome } from "@/server/aspenFeatures";
 import { measured } from "@/server/aspenRequest";
-import { continueLogin, isDisconnect, loginAllowed, startLogin, warmLogin } from "@/server/login";
+import { continueLogin, isDisconnect, startLogin, warmLogin } from "@/server/login";
 
 export const prerender = false;
 
 const NO_STORE = { "Cache-Control": "no-store" };
-
-const addressOf = (context: Parameters<APIRoute>[0]) => {
-	try {
-		return context.clientAddress;
-	} catch {
-		return "";
-	}
-};
 
 export const PUT: APIRoute = async () => {
 	warmLogin();
@@ -24,8 +16,6 @@ export const POST: APIRoute = async context => {
 	const { request, cookies, url } = context;
 	try {
 		const { username, password, loginId, answer } = (await request.json()) as Record<string, string>;
-		if (!loginId && !loginAllowed(addressOf(context)))
-			return Response.json({ error: "Too many attempts" }, { status: 429, headers: NO_STORE });
 		const result = await measured("login", () =>
 			loginId ? continueLogin(loginId, answer!, password!) : startLogin(username!, password!)
 		);

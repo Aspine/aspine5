@@ -16,19 +16,11 @@ const { stage = false } = Astro.props;
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<meta name="referrer" content="no-referrer" />
-		<meta name="color-scheme" content="dark light" />
+		<meta name="color-scheme" content="dark" />
 		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
 
 		<title>Aspine</title>
 		<slot name="head" />
-		<script is:inline>
-			(() => {
-				try {
-					const theme = localStorage.getItem("aspineTheme");
-					if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
-				} catch {}
-			})();
-		</script>
 	</head>
 	<body>
 		{!stage && <header class="pageTop">aspine v5</header>}

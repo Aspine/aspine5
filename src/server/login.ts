@@ -11,8 +11,6 @@ import {
 	BROWSER_ARGS,
 	CAPTCHA_TTL_MS,
 	HEADLESS,
-	LOGIN_LIMIT,
-	LOGIN_WINDOW_MS,
 	NAVIGATION_TIMEOUT_MS,
 	SELECTOR_TIMEOUT_MS,
 	VIEWPORT,
@@ -32,7 +30,6 @@ export type LoginResult = { sessionId: string } | { loginId: string; captcha: st
 
 let browser: Promise<Browser> | null = null;
 const pendingCaptchas = new Map<string, { page: Page; loginUrl: string }>();
-const loginAttempts = new Map<string, number[]>();
 const warmPages: {
 	loginUrl: string;
 	expires: number;
@@ -40,13 +37,6 @@ const warmPages: {
 }[] = [];
 
 export const isDisconnect = (error: unknown) => error instanceof Error && DISCONNECTED.test(error.message);
-
-export const loginAllowed = (key: string, now = Date.now()) => {
-	const recent = (loginAttempts.get(key) ?? []).filter(time => now - time < LOGIN_WINDOW_MS);
-	const allowed = recent.length < LOGIN_LIMIT;
-	loginAttempts.set(key, allowed ? [...recent, now] : recent);
-	return allowed;
-};
 
 const getBrowser = async (): Promise<Browser> => {
 	const pending = browser;
@@ -154,12 +144,9 @@ const waitForAspen = async (page: Page, loginUrl: string) => {
 	};
 	while (!onAspen()) {
 		const url = new URL(page.url());
-	
-		if (
-		    url.hostname === "accounts.google.com" &&
-		    /\/signin\/rejected(?:\/|$)/.test(url.pathname)
-		) {
-		    throw new Error("Google rejected this sign-in");
+
+		if (url.hostname === "accounts.google.com" && /\/signin\/rejected(?:\/|$)/.test(url.pathname)) {
+			throw new Error("Google rejected this sign-in");
 		}
 
 		if (Date.now() > deadline) throw new Error(`stuck at ${page.url()}`);

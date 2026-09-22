@@ -77,7 +77,6 @@ $phone: "(max-width: 699px)";
 	&[data-layer="3"] {
 		--layer: var(--frame);
 		z-index: 1;
-		gap: 2px;
 		padding: var(--frameGap) 6px 0 48px;
 	}
 
@@ -497,7 +496,7 @@ $phone: "(max-width: 699px)";
 	&.error {
 		color: var(--danger);
 	}
-	
+
 	& .menuQuarter #divider {
 		color: var(--textFaint);
 		&::after {
@@ -587,8 +586,6 @@ $phone: "(max-width: 699px)";
 		color: #f00;
 	}
 }
-
-
 
 .panelActions {
 	display: flex;
