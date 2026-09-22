@@ -1,0 +1,139 @@
+@use "vars" as *;
+
+[data-tone="a"] {
+	color: var(--gradeA);
+}
+[data-tone="b"] {
+	color: var(--gradeB);
+}
+[data-tone="c"] {
+	color: var(--gradeC);
+}
+[data-tone="d"] {
+	color: var(--gradeD);
+}
+[data-tone="f"] {
+	color: var(--gradeF);
+}
+[data-tone="rainbow"] {
+	background: var(--rainbow);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	font-weight: 600;
+}
+
+.home {
+	@media #{$tabBar} {
+		--footerHeight: env(safe-area-inset-bottom, 0px);
+	}
+}
+
+.pageBottom.stageFooter {
+	@media #{$tabBar} {
+		display: none;
+	}
+}
+
+.snackbar {
+	position: fixed;
+	z-index: 70;
+	bottom: calc(var(--footerHeight) + var(--tabBarHeight) + 16px);
+	left: 50%;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	max-width: calc(100% - 32px);
+	padding: 4px 4px 4px 16px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: var(--surfaceRaised);
+	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+	font-size: 0.875rem;
+	transform: translateX(-50%);
+
+	> span {
+		margin-right: 8px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+}
+
+.snackAction {
+	height: 32px;
+	padding: 0 10px;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--accent);
+	font: inherit;
+	font-weight: 600;
+
+	&:hover {
+		background: var(--surfaceHover);
+	}
+}
+
+.checkList {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 16px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+
+	legend {
+		width: 100%;
+	}
+}
+
+.skeletonRow {
+	display: flex;
+	align-items: center;
+	height: 44px;
+	padding: 0 16px;
+	border-bottom: 1px solid var(--line);
+
+	&:last-child {
+		border-bottom: 0;
+	}
+}
+
+.skeletonLine {
+	display: block;
+	width: 72px;
+	height: 10px;
+	border-radius: 5px;
+	background: linear-gradient(90deg, var(--surfaceRaised) 25%, var(--surfaceHover) 50%, var(--surfaceRaised) 75%);
+	background-size: 200% 100%;
+	animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+	from {
+		background-position: 100% 0;
+	}
+
+	to {
+		background-position: -100% 0;
+	}
+}
+
+.check {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.875rem;
+
+	input {
+		accent-color: var(--accent);
+	}
+}
+
+.main-title {
+	font-size: 1.5rem;
+	font-weight: 475;
+	text-align: center;
+	color: var(--accent);
+}

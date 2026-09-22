@@ -1,0 +1,356 @@
+.scheduleGrid {
+	display: grid;
+	align-items: start;
+	gap: 16px;
+
+	@media (min-width: 900px) {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+.reports {
+	display: grid;
+	gap: 16px;
+
+	@media (min-width: 900px) {
+		grid-template-columns: 280px minmax(0, 1fr);
+		grid-template-rows: minmax(0, 1fr);
+		height: 100%;
+	}
+}
+
+.viewport > section:has(> .reports) {
+	@media (min-width: 900px) {
+		height: 100%;
+	}
+}
+
+.reportPanel {
+	display: flex;
+	flex-direction: column;
+}
+
+.reportList {
+	display: grid;
+	align-content: start;
+	gap: 2px;
+	min-width: 0;
+	max-height: 30dvh;
+	margin: 0;
+	padding: 4px;
+	padding-right: 1px;
+	overflow-x: hidden;
+	overflow-y: auto;
+	list-style: none;
+
+	li {
+		min-width: 0;
+	}
+
+	@media (min-width: 900px) {
+		flex: 1;
+		min-height: 0;
+		max-height: none;
+	}
+}
+
+.reportItem {
+	display: block;
+	width: 100%;
+	padding: 8px 12px;
+	overflow: hidden;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--textMuted);
+	font: inherit;
+	font-size: 0.8125rem;
+	text-align: left;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	transition:
+		background-color var(--fast) var(--ease),
+		color var(--fast) var(--ease);
+
+	&:hover {
+		background: var(--surfaceRaised);
+		color: var(--text);
+	}
+
+	&[aria-pressed="true"] {
+		background: var(--surfaceHover);
+		box-shadow: inset 2px 0 0 var(--accent);
+		color: var(--text);
+	}
+}
+
+.reportView {
+	height: 70dvh;
+
+	@media (min-width: 900px) {
+		height: auto;
+		min-height: 0;
+	}
+}
+
+.reportFrame {
+	display: block;
+	flex: 1;
+	width: 100%;
+	min-height: 0;
+	border: 0;
+	background: #ffffff;
+}
+
+.tableScroll {
+	overflow-x: auto;
+}
+
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.875rem;
+
+	th,
+	td {
+		padding: 10px 12px;
+		border-bottom: 1px solid var(--line);
+		text-align: left;
+		vertical-align: middle;
+	}
+
+	th {
+		color: var(--textFaint);
+		font-size: 0.75rem;
+		font-weight: 500;
+		letter-spacing: 0.02em;
+		white-space: nowrap;
+	}
+
+	td:has(> .cellInput) {
+		padding-block: 6px;
+		padding-inline: 4px;
+	}
+
+	small {
+		display: block;
+		margin-top: 2px;
+		color: var(--textMuted);
+		font-size: 0.75rem;
+	}
+
+	.numeric {
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+
+	.iconCell {
+		width: 40px;
+		padding: 4px;
+		text-align: center;
+
+		svg {
+			display: inline-block;
+			color: var(--textFaint);
+		}
+	}
+
+	.className {
+		font-weight: 500;
+	}
+
+	tr[aria-selected="true"] {
+		background: var(--surfaceRaised);
+		position: relative;
+
+		td:first-child {
+			position: relative;
+
+			&::before {
+				content: "";
+				position: absolute;
+				top: 0;
+				left: 0px;
+				bottom: 0;
+				width: 2px;
+				border-radius: 0 2px 2px 0;
+				background: var(--accent);
+			}
+		}
+	}
+}
+
+.panel .table td:first-child:has(> .cellInput) {
+	padding-left: 7px;
+}
+
+.table .numeric small {
+	display: inline;
+	margin: 0 0 0 8px;
+}
+
+.scheduleGrid .table td {
+	height: 62px;
+	white-space: nowrap;
+}
+
+.currentRow {
+	background: var(--surfaceRaised);
+	box-shadow: inset 2px 0 0 var(--accent);
+
+	td:first-child {
+		font-weight: 600;
+	}
+}
+
+.clickable {
+	cursor: pointer;
+	transition: background-color var(--fast) var(--ease);
+
+	&:hover {
+		background: var(--surfaceRaised);
+	}
+}
+
+.cellInput {
+	width: 100%;
+	min-width: 72px;
+	height: 32px;
+	padding: 0 8px;
+	border: 1px solid transparent;
+	border-radius: 6px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	transition: border-color var(--fast) var(--ease);
+
+	&:hover {
+		border-color: var(--line);
+	}
+
+	&:focus {
+		border-color: var(--accent);
+		outline: none;
+		background: var(--surfaceRaised);
+	}
+
+	&.numeric {
+		text-align: right;
+	}
+}
+
+select.cellInput {
+	width: auto;
+	max-width: 100%;
+	padding-left: 3px;
+}
+
+.iconButton {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--textFaint);
+	transition:
+		background-color var(--fast) var(--ease),
+		color var(--fast) var(--ease);
+
+	&:hover {
+		background: var(--surfaceRaised);
+		color: var(--text);
+	}
+}
+
+.modalBackdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	display: grid;
+	place-items: center;
+	padding: 16px;
+	background: rgba(0, 0, 0, 0.5);
+}
+
+.modal {
+	display: grid;
+	gap: 16px;
+	width: 100%;
+	max-width: 440px;
+	padding: 24px;
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	background: var(--surface);
+}
+
+.modalHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+
+	h2 {
+		font-size: 1rem;
+		font-weight: 600;
+		overflow-wrap: anywhere;
+	}
+}
+
+.modalForm {
+	display: grid;
+	gap: 12px;
+}
+
+.details {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 8px 16px;
+	margin: 0;
+	font-size: 0.875rem;
+
+	div {
+		display: contents;
+	}
+
+	dt {
+		color: var(--textMuted);
+	}
+
+	dd {
+		margin: 0;
+		overflow-wrap: anywhere;
+	}
+}
+
+.statsPlot {
+	position: relative;
+	height: 24px;
+	border-radius: 6px;
+	background: var(--surfaceRaised);
+}
+
+.statsRange {
+	position: absolute;
+	top: 9px;
+	bottom: 9px;
+	border-radius: 3px;
+	background: var(--lineStrong);
+}
+
+.statsMark {
+	position: absolute;
+	top: 4px;
+	bottom: 4px;
+	width: 2px;
+	border-radius: 1px;
+	background: var(--textMuted);
+	transform: translateX(-1px);
+
+	&.score {
+		background: var(--accent);
+	}
+}

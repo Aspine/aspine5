@@ -1,0 +1,9 @@
+@use "sass:string";
+
+$tabBar: "(max-width: 859px)";
+$phone: "(max-width: 699px)";
+$textMuted: #cdd7d2;
+
+@function svgHex($color) {
+	@return "%23" + string.slice("#{$color}", 2);
+}
