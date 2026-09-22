@@ -100,7 +100,7 @@ export const DEMO_FILE: ExportFile = {
 					date: assignment.due,
 					classname: name,
 					assignment: assignment.name,
-					score: `${assignment.score} / ${assignment.maxScore}`
+					score: `${assignment.score ?? ""}`
 				}))
 		)
 	},

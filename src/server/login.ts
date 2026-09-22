@@ -93,8 +93,10 @@ const closeWarm = (page: Promise<Page>) =>
 	void page.then(opened => opened.browserContext().close()).catch(() => undefined);
 
 export const warmLogin = (loginUrl = ASPEN_LOGIN_URL, now = Date.now()) => {
-	const fresh = warmPages.some(entry => entry.loginUrl === loginUrl && entry.expires - now > WARM_LOGIN_TTL_MS / 2);
-	if (fresh) return undefined;
+	const fresh = warmPages.filter(
+		entry => entry.loginUrl === loginUrl && entry.expires - now > WARM_LOGIN_TTL_MS / 2
+	).length;
+	if (fresh >= WARM_LOGIN_PAGES) return undefined;
 	if (warmPages.length >= WARM_LOGIN_PAGES) closeWarm(warmPages.shift()!.page);
 	const entry = {
 		loginUrl,

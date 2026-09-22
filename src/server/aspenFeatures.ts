@@ -1,4 +1,5 @@
 import { SERVER_CACHE_MS, SESSION_MEMO_MS } from "@/config";
+import { collectable } from "@/server/gc";
 import type {
 	Assignment,
 	AssignmentStats,
@@ -57,14 +58,13 @@ const ATTENDANCE_FLAGS = [
 ] as const;
 const HOME_FEATURES = ["recent", "schedule", "reports"];
 
-const stored = new Map<string, Expiring<Stored>>();
-const memo = new Map<string, Expiring<unknown>>();
+const stored = collectable(new Map<string, Expiring<Stored>>());
+const memo = collectable(new Map<string, Expiring<unknown>>());
 
 const expiring = <T>(map: Map<string, Expiring<T>>, key: string, lifetime: number, load: () => Promise<T>) => {
 	const now = Date.now();
-	map.forEach((entry, entryKey) => entry.expires < now && map.delete(entryKey));
 	const hit = map.get(key);
-	if (hit) return hit.value;
+	if (hit && hit.expires > now) return hit.value;
 	const value = load();
 	map.set(key, { expires: now + lifetime, value });
 	value.catch(() => map.delete(key));

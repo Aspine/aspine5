@@ -1,6 +1,6 @@
 import { Check, ChevronDown, X } from "lucide-preact";
 import type { ComponentChildren } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import { REPO_URL, SNACKBAR_MS } from "@/config";
 import type { ApiState } from "@/lib/useApi";
 
@@ -136,6 +136,15 @@ export const Menu = ({ label, groups }: { label: ComponentChildren; groups: read
 			removeEventListener("keydown", closeOnEscape);
 			removeEventListener("resize", close);
 		};
+	}, [position]);
+
+	useLayoutEffect(() => {
+		const menu = popover.current;
+		if (!position || !menu) return;
+		const edge = 8;
+		const right = Math.min(Math.max(position.right, edge), Math.max(edge, innerWidth - menu.offsetWidth - edge));
+		const top = Math.min(position.top, Math.max(edge, innerHeight - menu.offsetHeight - edge));
+		if (right !== position.right || top !== position.top) setPosition({ top, right });
 	}, [position]);
 
 	const toggle = () => {

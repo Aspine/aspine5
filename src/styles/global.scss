@@ -1,3 +1,11 @@
+@use "sass:string";
+
+$textMuted: #cdd7d2;
+
+@function svgHex($color) {
+	@return "%23" + string.slice("#{$color}", 2);
+}
+
 :root {
 	--bg: #0d0f0e;
 	--surface: #141715;
@@ -9,8 +17,8 @@
 	--textIcon: var(--textMuted);
 	--textIcon2: var(--text);
 	--textFaint: var(--textMuted);
-	--textMuted: #cdd7d2;
-	--chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23adb5b1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+	--textMuted: #{$textMuted};
+	--chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='#{svgHex($textMuted)}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 	--accent: #43c678;
 	--accentHover: #5ad48a;
 	--onAccent: #04150a;

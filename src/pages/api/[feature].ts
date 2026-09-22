@@ -9,6 +9,7 @@ export const GET: APIRoute = async ({ params, url, cookies }) => {
 	const feature = getFeature(params.feature ?? "");
 	const sessionId = cookies.get("aspineSession")?.value;
 	const noSession = () => {
+		if (sessionId) endSession(sessionId);
 		cookies.delete("aspineSession", { path: "/" });
 		return new Response("No session", { status: 401 });
 	};
