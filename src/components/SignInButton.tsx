@@ -5,8 +5,8 @@ import { useLayoutEffect, useRef } from "preact/hooks";
 // just to get broken and overwritten by some stupid change.
 // PLS PLS PLS DON'T TOUCH!!!
 
-const SPEED = 1.0;
-const TEXT = 1.0;
+const SPEED = 2.2;
+const TEXT = 2.0;
 const SPIN = 1.0;
 
 const W = 192,
