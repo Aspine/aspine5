@@ -5,7 +5,8 @@ import { useLayoutEffect, useRef } from "preact/hooks";
 // just to get broken and overwritten by some stupid change.
 // PLS PLS PLS DON'T TOUCH!!!
 
-const SPEED = 2.0;
+const SPEED = 1.0;
+const TEXT = 1.0;
 const SPIN = 1.0;
 
 const W = 192,
@@ -33,6 +34,13 @@ type Geo = {
 const smooth = (n: number) => {
 	const t = Math.max(0, Math.min(1, n));
 	return t * t * (3 - 2 * t);
+};
+
+const travelAt = (t: number) => 0.115 * (t < 70 ? (t * t) / 140 : t - 35);
+
+const lengthAt = (t: number) => {
+	const release = Math.max(0, Math.min(20, t - 24));
+	return t <= 24 ? 14 + t : 38 + release - release ** 2 / 40;
 };
 
 const build = (old: HTMLElement, next: HTMLElement, key: string): Geo => {
@@ -184,19 +192,21 @@ export const SignInButton = ({ label, busyLabel, pending }: Props) => {
 
 		const tick = (now: number) => {
 			const elapsed = now - start;
-			const ms = elapsed * 1.08 * SPEED;
 			const travel =
 				elapsed <= handoffMs
-					? 0.115 * (ms < 70 ? (ms * ms) / 140 : ms - 35)
+					? travelAt(elapsed * 1.08 * SPEED)
 					: handoff + (elapsed - handoffMs) * 0.115 * 1.08 * SPIN;
 			const s = g.startX + travel;
-			const release = Math.max(0, Math.min(20, travel - 24));
-			const length = travel <= 24 ? 14 + travel : 38 + release - release ** 2 / 40;
+			const length = lengthAt(travel);
 			const progress = Math.max(0, Math.min(1, (s - g.trimStart) / span));
-			const x = point(g, s).x;
 
-			oldChars.forEach((c, i) => show(c, !(s >= g.orbit || x + 3 >= g.erase[i]!)));
-			newChars.forEach((c, i) => show(c, s - length >= g.reveal[i]!));
+			const textTravel = travelAt(elapsed * 1.08 * TEXT);
+			const textTip = g.startX + textTravel;
+			const textTail = textTip - lengthAt(textTravel);
+			const textX = point(g, textTip).x;
+
+			oldChars.forEach((c, i) => show(c, !(textTip >= g.orbit || textX + 3 >= g.erase[i]!)));
+			newChars.forEach((c, i) => show(c, textTail >= g.reveal[i]!));
 			draw(s, length, progress);
 
 			frame = requestAnimationFrame(tick);
