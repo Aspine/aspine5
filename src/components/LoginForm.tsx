@@ -18,6 +18,7 @@ export const LoginForm = () => {
 	const [answer, setAnswer] = useState("");
 	const [response, setResponse] = useState<LoginResponse | null>(null);
 	const [pending, setPending] = useState(false);
+	const [waited, setWaited] = useState(0);
 	const form = useRef<HTMLFormElement>(null);
 	const answerInput = useRef<HTMLInputElement>(null);
 
@@ -27,6 +28,13 @@ export const LoginForm = () => {
 	useEffect(() => {
 		if (captcha) answerInput.current?.focus();
 	}, [captcha?.loginId]);
+
+	useEffect(() => {
+		if (!pending) return setWaited(0);
+		const started = Date.now();
+		const timer = setInterval(() => setWaited(Math.floor((Date.now() - started) / 1000)), 250);
+		return () => clearInterval(timer);
+	}, [pending]);
 
 	useEffect(() => {
 		const rewarm = () =>
@@ -119,9 +127,14 @@ export const LoginForm = () => {
 			)}
 			<SignInButton
 				pending={pending}
-				label={captcha ? "Continue" : "Sign in"}
-				busyLabel={captcha ? "Continuing..." : "Signing in..."}
+				label={captcha ? "  Continue  " : "  Sign in  "}
+				busyLabel={captcha ? "  Continuing...  " : "  Signing in...  "}
 			/>
+			{pending && waited >= 7 && (
+				<p class="loginWait" role="status">
+					Aspen is taking longer than usual... <code>{waited}s</code>
+				</p>
+			)}
 			{captcha && !pending && (
 				<button class="button ghost" type="button" onClick={() => setResponse(null)}>
 					Back

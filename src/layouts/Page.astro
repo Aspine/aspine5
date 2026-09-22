@@ -23,7 +23,7 @@ const { stage = false } = Astro.props;
 		<slot name="head" />
 	</head>
 	<body>
-		{!stage && <header class="pageTop">aspine v5</header>}
+		{!stage && <header class="pageTop">Aspine</header>}
 		<slot />
 		{!stage && <Footer commit={COMMIT} />}
 	</body>

@@ -49,12 +49,6 @@
 
 .pageBottom.stageFooter {
 	z-index: 2;
-	align-items: center;
-	height: calc(28px + env(safe-area-inset-bottom));
-	padding-inline: 16px;
-	padding-bottom: env(safe-area-inset-bottom);
-	color: var(--textMuted);
-	font-size: 0.75rem;
 }
 
 .toolbar {

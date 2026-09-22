@@ -10,7 +10,8 @@ const TEXT = 2.0;
 const SPIN = 1.0;
 
 const W = 192,
-	Y = 28,
+	H = 44,
+	Y = H / 2,
 	R = 10,
 	STEP = 0.015;
 const CHORD = 2 * R * Math.sin(STEP / 2);
@@ -60,7 +61,7 @@ const build = (old: HTMLElement, next: HTMLElement, key: string): Geo => {
 			u = 1 - t,
 			p = curve[i - 1]!;
 		const x = u ** 3 * x0 + 3 * u * u * t * (x0 + 12) + 3 * u * t * t * (center - 10) + t ** 3 * center;
-		const y = u ** 3 * Y + 3 * u * u * t * Y + 3 * u * t * t * 18 + t ** 3 * 18;
+		const y = u ** 3 * Y + 3 * u * u * t * Y + 3 * u * t * t * (Y - R) + t ** 3 * (Y - R);
 		curve.push({ x, y, s: p.s + Math.hypot(x - p.x, y - p.y) });
 	}
 
@@ -227,7 +228,7 @@ export const SignInButton = ({ label, busyLabel, pending }: Props) => {
 			<span class="signInStage">
 				<svg
 					aria-hidden="true"
-					viewBox="0 0 192 56"
+					viewBox={`0 0 ${W} ${H}`}
 					fill="none"
 					stroke="currentColor"
 					stroke-width="2"
