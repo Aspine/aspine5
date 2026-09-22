@@ -154,11 +154,18 @@ $phone: "(max-width: 699px)";
 }
 
 .brand {
-	padding-right: 4px;
+	padding: 0 4px 0 0;
+	border: 0;
+	background: none;
 	font-size: 0.9375rem;
 	font-weight: 650;
 	letter-spacing: -0.02em;
 	white-space: nowrap;
+	transition: opacity var(--fast) var(--ease);
+
+	&:hover {
+		opacity: 0.75;
+	}
 }
 
 .chrome .tab,
@@ -523,6 +530,18 @@ $phone: "(max-width: 699px)";
 	gap: 16px;
 }
 
+.classHint {
+	display: grid;
+	place-content: center;
+	gap: 0.4rem;
+	min-height: 40vh;
+	padding: 0 1rem;
+	color: var(--textMuted);
+	font-size: 0.9rem;
+	text-align: center;
+	text-wrap: balance;
+}
+
 .panel {
 	min-width: 0;
 	overflow: hidden;
@@ -772,7 +791,22 @@ $phone: "(max-width: 699px)";
 
 	tr[aria-selected="true"] {
 		background: var(--surfaceRaised);
-		box-shadow: inset 2px 0 0 var(--accent);
+		position: relative;
+
+		td:first-child {
+			position: relative;
+
+			&::before {
+				content: "";
+				position: absolute;
+				top: 0;
+				left: 0px;
+				bottom: 0;
+				width: 2px;
+				border-radius: 0 2px 2px 0;
+				background: var(--accent);
+			}
+		}
 	}
 }
 

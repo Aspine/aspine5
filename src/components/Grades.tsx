@@ -395,6 +395,8 @@ export const Grades = ({
 	const classes = data.classes.filter(item => item.inQuarter);
 	const selected = classes.find(item => item.oid === selectedOid);
 
+	const select = (oid: string) => setSelectedOid(oid === selectedOid ? null : oid);
+
 	return (
 		<div class="stack">
 			<div class="panel">
@@ -421,7 +423,7 @@ export const Grades = ({
 								key={item.oid}
 								class="clickable"
 								aria-selected={item.oid === selectedOid}
-								onClick={() => setSelectedOid(item.oid === selectedOid ? null : item.oid)}
+								onClick={() => select(item.oid)}
 							>
 								<td class="className">{item.name}</td>
 								<td class="numeric">
@@ -439,6 +441,12 @@ export const Grades = ({
 					})}
 				</Table>
 			</div>
+			{!selected && classes.length > 0 && (
+				<div class="classHint">
+					<p>Select a class to see its assignments and category weights</p>
+					<p>Add, edit, or delete scores there to simulate how your grade would change</p>
+				</div>
+			)}
 			{selected && (
 				<ClassDetail
 					key={selected.oid}

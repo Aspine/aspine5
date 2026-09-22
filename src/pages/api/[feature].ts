@@ -1,22 +1,28 @@
 import type { APIRoute } from "astro";
 import { getFeature } from "@/server/aspenFeatures";
 import { measured } from "@/server/aspenRequest";
+import { endSession, sessionLive } from "@/server/session";
 
 export const prerender = false;
-
-const NO_SESSION = () => new Response("No session", { status: 401 });
 
 export const GET: APIRoute = async ({ params, url, cookies }) => {
 	const feature = getFeature(params.feature ?? "");
 	const sessionId = cookies.get("aspineSession")?.value;
+	const noSession = () => {
+		cookies.delete("aspineSession", { path: "/" });
+		return new Response("No session", { status: 401 });
+	};
 	if (!feature) return new Response("Unknown feature", { status: 404 });
-	if (!sessionId) return NO_SESSION();
+	if (!sessionId || !sessionLive(sessionId)) return noSession();
 	try {
 		const response = await measured(params.feature ?? "", () => feature(sessionId, url.searchParams));
-		if (params.feature === "logout") cookies.delete("aspineSession", { path: "/" });
+		if (params.feature === "logout") {
+			endSession(sessionId);
+			cookies.delete("aspineSession", { path: "/" });
+		}
 		switch (true) {
 			case response.status === 401 || response.status === 403:
-				return NO_SESSION();
+				return noSession();
 			case !response.ok:
 				return new Response(`Aspen ${response.status}`, {
 					status: 502
@@ -34,7 +40,7 @@ export const GET: APIRoute = async ({ params, url, cookies }) => {
 		});
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
-		if (message === "session") return NO_SESSION();
+		if (message === "session") return noSession();
 		console.error(params.feature, message);
 		return new Response("Error", { status: 502 });
 	}

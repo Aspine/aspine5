@@ -249,8 +249,15 @@ export const Home = ({ mode, commit }: { mode: Mode; commit: string | null }) =>
 		<div class="home">
 			<header class="chrome">
 				<div class="chromeSection" data-layer="0">
-					{/** Aspine title in top left */}
-					<div class="brand main-title">Aspine</div>
+					<button
+						type="button"
+						class="brand main-title"
+						aria-label={offline ? "Aspine, exit" : "Aspine, logout"}
+						title={offline ? "Exit" : "Logout"}
+						onClick={leave}
+					>
+						Aspine
+					</button>
 					<Curve />
 				</div>
 				<div class="chromeSection" data-layer="1">

@@ -5,6 +5,9 @@ import { useLayoutEffect, useRef } from "preact/hooks";
 // just to get broken and overwritten by some stupid change.
 // PLS PLS PLS DON'T TOUCH!!!
 
+const SPEED = 2.0;
+const SPIN = 1.0;
+
 const W = 192,
 	Y = 28,
 	R = 10,
@@ -174,12 +177,18 @@ export const SignInButton = ({ label, busyLabel, pending }: Props) => {
 		}
 
 		const span = (g.trimEnd - g.trimStart) * 1.2;
+		const handoff = Math.max(g.orbit, g.trimStart + span) - g.startX;
+		const handoffMs = (handoff / 0.115 + 35) / (1.08 * SPEED);
 		const start = performance.now();
 		let frame = 0;
 
 		const tick = (now: number) => {
-			const ms = (now - start) * 1.08;
-			const travel = 0.115 * (ms < 70 ? (ms * ms) / 140 : ms - 35);
+			const elapsed = now - start;
+			const ms = elapsed * 1.08 * SPEED;
+			const travel =
+				elapsed <= handoffMs
+					? 0.115 * (ms < 70 ? (ms * ms) / 140 : ms - 35)
+					: handoff + (elapsed - handoffMs) * 0.115 * 1.08 * SPIN;
 			const s = g.startX + travel;
 			const release = Math.max(0, Math.min(20, travel - 24));
 			const length = travel <= 24 ? 14 + travel : 38 + release - release ** 2 / 40;

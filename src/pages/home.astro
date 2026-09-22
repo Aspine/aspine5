@@ -1,0 +1,17 @@
+---
+import { Home } from "../components/Home";
+import Page from "../layouts/Page.astro";
+import { gradesPath } from "../lib/useApi";
+import { COMMIT } from "../server/commit";
+import { sessionLive } from "../server/session";
+import "../styles/home.scss";
+
+export const prerender = false;
+
+if (!sessionLive(Astro.cookies.get("aspineSession")?.value)) return Astro.redirect("/");
+---
+
+<Page stage>
+	<link slot="head" rel="preload" href={gradesPath("current", "")} as="fetch" crossorigin="anonymous" />
+	<Home client:load mode="home" commit={COMMIT} />
+</Page>

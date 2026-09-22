@@ -124,6 +124,7 @@ svg {
 	border-radius: var(--radius);
 	background: var(--surfaceRaised);
 	font-weight: 500;
+	text-decoration: none;
 	transition: background-color var(--fast) var(--ease);
 
 	&:hover {

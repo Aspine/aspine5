@@ -39,6 +39,8 @@ export const SERVER_CACHE_MS = 60_000;
 
 export const SESSION_MEMO_MS = 600_000;
 
+export const SESSION_TTL_MS = 1_800_000;
+
 export const WARM_LOGIN_PAGES = 2;
 
 export const WARM_LOGIN_TTL_MS = 120_000;

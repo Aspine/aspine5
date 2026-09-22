@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { prefetchHome } from "@/server/aspenFeatures";
 import { measured } from "@/server/aspenRequest";
 import { continueLogin, isDisconnect, startLogin, warmLogin } from "@/server/login";
+import { startSession } from "@/server/session";
 
 export const prerender = false;
 
@@ -20,6 +21,7 @@ export const POST: APIRoute = async context => {
 			loginId ? continueLogin(loginId, answer!, password!) : startLogin(username!, password!)
 		);
 		if ("sessionId" in result) {
+			startSession(result.sessionId);
 			prefetchHome(result.sessionId);
 			cookies.set("aspineSession", result.sessionId, {
 				httpOnly: true,

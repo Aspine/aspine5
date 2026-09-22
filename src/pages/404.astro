@@ -1,14 +1,19 @@
 ---
 import Page from "../layouts/Page.astro";
+import { sessionLive } from "../server/session";
 import "../styles/login.scss";
+
+export const prerender = false;
+
+const signedIn = sessionLive(Astro.cookies.get("aspineSession")?.value);
 ---
 
 <Page>
 	<main class="loginPage">
 		<div class="loginPanel">
 			<h1 class="loginTitle">Not found</h1>
-			<a class="button primary no-underline" style="text-decoration: none;" href="/">
-				Sign in
+			<a class="button primary" href={signedIn ? "/home" : "/"}>
+				{signedIn ? "Home" : "Sign in"}
 			</a>
 		</div>
 	</main>

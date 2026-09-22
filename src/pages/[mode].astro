@@ -1,18 +1,14 @@
 ---
 import { Home, MODES, type Mode } from "../components/Home";
 import Page from "../layouts/Page.astro";
-import { gradesPath } from "../lib/useApi";
 import { COMMIT } from "../server/commit";
 import "../styles/home.scss";
 
-export const getStaticPaths = () => MODES.map(mode => ({ params: { mode } }));
+export const getStaticPaths = () => MODES.filter(mode => mode !== "home").map(mode => ({ params: { mode } }));
 
 const mode = Astro.params.mode as Mode;
 ---
 
 <Page stage>
-	{mode === "home" && (
-		<link slot="head" rel="preload" href={gradesPath("current", "")} as="fetch" crossorigin="anonymous" />
-	)}
 	<Home client:load mode={mode} commit={COMMIT} />
 </Page>
