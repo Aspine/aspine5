@@ -1,5 +1,9 @@
 @use "vars" as *;
 
+span {
+	vertical-align: middle;
+}
+
 .home {
 	--chromeHeight: 42px;
 	--footerHeight: calc(28px + env(safe-area-inset-bottom));
@@ -110,6 +114,7 @@
 				margin: 0;
 				font-size: 0.6875rem;
 				line-height: 1.2;
+				align-items: center;
 
 				&::after {
 					display: none;
@@ -184,7 +189,12 @@
 	white-space: nowrap;
 	cursor: pointer;
 	transition: color var(--fast) var(--ease);
-
+	
+	& > span {
+		transform: translateY(2px);
+		line-height: 1.0 !important;
+	}
+	
 	&:hover:not(:disabled),
 	&[aria-expanded="true"] {
 		color: var(--text);
