@@ -190,8 +190,13 @@ span {
 	cursor: pointer;
 	transition: color var(--fast) var(--ease);
 	
-	& > span {
-		transform: translateY(2px);
+	& span {
+		transform: translateY(1px) !important;
+		line-height: 1.0 !important;
+	}
+
+	& .menuText {
+		transform: translateY(1px) !important;
 		line-height: 1.0 !important;
 	}
 	
