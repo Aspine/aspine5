@@ -189,17 +189,17 @@ span {
 	white-space: nowrap;
 	cursor: pointer;
 	transition: color var(--fast) var(--ease);
-	
+
 	& span {
 		transform: translateY(1px) !important;
-		line-height: 1.0 !important;
+		line-height: 1 !important;
 	}
 
 	& .menuText {
 		transform: translateY(1px) !important;
-		line-height: 1.0 !important;
+		line-height: 1 !important;
 	}
-	
+
 	&:hover:not(:disabled),
 	&[aria-expanded="true"] {
 		color: var(--text);

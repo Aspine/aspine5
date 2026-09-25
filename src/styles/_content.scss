@@ -197,10 +197,21 @@
 
 .currentRow {
 	background: var(--surfaceRaised);
-	box-shadow: inset 2px 0 0 var(--accent);
 
 	td:first-child {
 		font-weight: 600;
+		position: relative;
+
+		&::before {
+			content: "";
+			position: absolute;
+			top: 0;
+			left: 0px;
+			bottom: 0;
+			width: 2px;
+			border-radius: 0 2px 2px 0;
+			background: var(--accent);
+		}
 	}
 }
 
